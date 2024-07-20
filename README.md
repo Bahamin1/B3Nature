@@ -1,6 +1,16 @@
 # `B3Nature`
 
-Welcome to your new `B3Nature` project and to the Internet Computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
+B3Nature project uses ICP blockchain to create a tokenized platform for environmental protection. Sponsors stake tokens, and verified participants engage in cleanup, animal treatment, and reforestation, earning tokens upon proof. AI integration ensures efficient verification and payments, and public voting determines rewards.
+
+## Key Features
+
+- **Tokenization and Staking**: Users can stake tokens to sponsor environmental projects and earn rewards.
+- **Verification and Rewards**: Participants can verify their identity, submit evidence of their contributions, and receive tokens as rewards.
+- **Comprehensive Environmental Aid**: The platform supports a wide range of environmental initiatives beyond cleanup, including animal welfare and habitat restoration.
+
+## Implementation
+
+The project is being developed using the Motoko language, which is specifically designed for the Internet Computer. Below are the steps to set up and run the project.
 
 To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
 
@@ -48,6 +58,23 @@ npm start
 ```
 
 Which will start a server at `http://localhost:8080`, proxying API requests to the replica at port 4943.
+
+## Team Members
+
+current team members working on this project:
+
+- **Bahamin Deylami**
+  - [Forum Profile](https://forum.dfinity.org/u/bahamin1/summary)
+    git : Bahamin1
+- **Behrad Deylami**
+  - [Forum Profile](https://forum.dfinity.org/u/b3hr4d/summary)
+    git : b3hr4d
+
+Together, we are committed to making a positive impact on our environment and society through innovative blockchain solutions.
+
+## Contributing
+
+We welcome contributions from the community. Please feel free to fork the repository and submit pull requests. For major changes, please open an issue first to discuss what you would like to change.
 
 ### Note on frontend environment variables
 
