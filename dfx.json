@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "B3Nature_backend": {
+      "main": "src/B3Nature_backend/main.mo",
+      "type": "motoko"
+    },
+    "B3Nature_frontend": {
+      "dependencies": [
+        "B3Nature_backend"
+      ],
+      "source": [
+        "src/B3Nature_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "B3Nature_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
