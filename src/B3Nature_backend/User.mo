@@ -19,7 +19,7 @@ module {
     };
 
     public type Role = {
-        #Guest;
+        #Newbee;
         #Staker;
         #ActiveParticipant;
         #Council;
@@ -40,8 +40,12 @@ module {
     };
 
     // add New user specefic with oprations
-    public func new(userMap : UserMap, principal : Principal, name : Text, email : Text, image : ?Blob) : (Text) {
+    public func new(userMap : UserMap, principal : Principal, name : Text, email : Text, image : ?Blob) : Result.Result<(Text), Text> {
         let id = Map.size(userMap) +1;
+        if (name.size() > 32) {
+            return #err("name Is too long");
+        };
+
         switch (get(userMap, principal)) {
             case (null) {
 
@@ -50,7 +54,7 @@ module {
                     name = name;
                     identity = principal;
                     email = email;
-                    role = #Guest;
+                    role = #Newbee;
                     reviewPoint = 0;
                     votingPower = 0;
                     review = [];
@@ -59,7 +63,7 @@ module {
 
                 put(userMap, principal, user);
 
-                return "member successfully updated ";
+                return #ok("member successfully updated ");
 
             };
             case (?user) {
@@ -68,7 +72,7 @@ module {
                     id = user.id;
                     name = name;
                     identity = principal;
-                    email = email;
+                    email = user.email;
                     role = user.role;
                     reviewPoint = user.reviewPoint;
                     votingPower = user.votingPower;
@@ -77,7 +81,7 @@ module {
                 };
 
                 put(userMap, principal, updateUser);
-                return "Wellcome register Completed";
+                return #ok("Wellcome register Completed");
             };
         };
 
