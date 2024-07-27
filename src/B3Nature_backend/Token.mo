@@ -15,9 +15,14 @@ module {
         return Map.set(tokenMap, phash, p, amount);
     };
 
-    public func mintTokens(tokenMap : TokenMap, to : Principal, amount : Nat) : () {
+    public func mintTokens(tokenMap : TokenMap, to : Principal, amount : Nat) : (Text) {
         let ?balance = get(tokenMap, to);
-        put(tokenMap, to, balance + amount);
+        if (balance > amount) {
+            put(tokenMap, to, balance + amount);
+            return "Ok";
+        };
+        return "Err";
+
     };
 
     public func transferTokens(tokenMap : TokenMap, from : Principal, to : Principal, amount : Nat) : Result.Result<Text, Text> {

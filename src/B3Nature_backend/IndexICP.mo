@@ -67,14 +67,5 @@ module {
     created_at_time : ?TimeStamp;
   };
   public type TransactionWithId = { id : Nat64; transaction : Transaction };
-  public type Self = InitArg -> async actor {
-    get_account_identifier_balance : shared query Text -> async Nat64;
-    get_account_identifier_transactions : shared query GetAccountIdentifierTransactionsArgs -> async GetAccountIdentifierTransactionsResult;
-    get_account_transactions : shared query GetAccountTransactionsArgs -> async GetAccountIdentifierTransactionsResult;
-    get_blocks : shared query GetBlocksRequest -> async GetBlocksResponse;
-    http_request : shared query HttpRequest -> async HttpResponse;
-    icrc1_balance_of : shared query Account -> async Nat64;
-    ledger_id : shared query () -> async Principal;
-    status : shared query () -> async Status;
-  };
+
 };

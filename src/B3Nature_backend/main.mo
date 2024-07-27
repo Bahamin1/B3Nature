@@ -214,7 +214,7 @@ actor class B3Nature() {
     return reports;
   };
 
-  let friendActor = actor ("qhbym-qaaaa-aaaaa-aaafq-cai") : actor {
+  let index = actor ("qhbym-qaaaa-aaaaa-aaafq-cai") : actor {
     rget_account_identifier_balance : shared query Text -> async Nat64;
     get_account_identifier_transactions : shared query IndexIcp.GetAccountIdentifierTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;
     get_account_transactions : shared query IndexIcp.GetAccountTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;
@@ -224,5 +224,11 @@ actor class B3Nature() {
     ledger_id : shared query () -> async Principal;
     status : shared query () -> async IndexIcp.Status;
   };
+
+  public shared func getBlock(request : IndexIcp.GetBlocksRequest) : async IndexIcp.GetBlocksResponse {
+    return await index.get_blocks(request);
+  };
+
+  stable let B3NatureMemo : Nat64 = 1235464551231356456;
 
 };
