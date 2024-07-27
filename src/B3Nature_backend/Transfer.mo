@@ -7,13 +7,13 @@ import Result "mo:base/Result";
 
 actor {
   type Tokens = {
-    e8s : Nat64;
+    e8s : Nat64
   };
 
   type TransferArgs = {
     amount : Tokens;
     toPrincipal : Principal;
-    toSubaccount : ?IcpLedger.SubAccount;
+    toSubaccount : ?IcpLedger.SubAccount
   };
 
   public shared func transfer(args : TransferArgs) : async Result.Result<IcpLedger.BlockIndex, Text> {
@@ -38,7 +38,7 @@ actor {
       // we take the principal and subaccount from the arguments and convert them into an account identifier
       to = Principal.toLedgerAccount(args.toPrincipal, args.toSubaccount);
       // a timestamp indicating when the transaction was created by the caller; if it is not specified by the caller then this is set to the current ICP time
-      created_at_time = null;
+      created_at_time = null
     };
 
     try {
@@ -48,13 +48,13 @@ actor {
       // check if the transfer was successfull
       switch (transferResult) {
         case (#Err(transferError)) {
-          return #err("Couldn't transfer funds:\n" # debug_show (transferError));
+          return #err("Couldn't transfer funds:\n" # debug_show (transferError))
         };
-        case (#Ok(blockIndex)) { return #ok blockIndex };
-      };
+        case (#Ok(blockIndex)) { return #ok blockIndex }
+      }
     } catch (error : Error) {
       // catch any errors that might occur during the transfer
-      return #err("Reject message: " # Error.message(error));
-    };
-  };
-};
+      return #err("Reject message: " # Error.message(error))
+    }
+  }
+}
