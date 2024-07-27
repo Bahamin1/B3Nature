@@ -1,5 +1,7 @@
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
+import Debug "mo:base/Debug";
+import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
@@ -137,6 +139,10 @@ actor class B3Nature() {
 
   };
 
+  public query func getEvidence() : async [Evidence.Evidence] {
+    return Iter.toArray<Evidence.Evidence>(Map.vals(evidencesMap));
+  };
+
   public query func getUnvalidatedEvidence() : async [Evidence.Evidence] {
     var filteredEvidence : [Evidence.Evidence] = [];
     for (element in Map.vals(evidencesMap)) {
@@ -144,6 +150,7 @@ actor class B3Nature() {
         filteredEvidence := Array.append<Evidence.Evidence>(filteredEvidence, [element]);
       };
     };
+
     return filteredEvidence;
   };
 
