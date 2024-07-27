@@ -10,6 +10,7 @@ import Types "mo:dao-proposal-engine/Types";
 import Map "mo:map/Map";
 
 import Evidence "Evidence";
+import IndexIcp "IndexICP";
 import Report "Report";
 import Review "Review";
 import Token "Token";
@@ -211,6 +212,17 @@ actor class B3Nature() {
       };
     };
     return reports;
+  };
+
+  let friendActor = actor ("qhbym-qaaaa-aaaaa-aaafq-cai") : actor {
+    rget_account_identifier_balance : shared query Text -> async Nat64;
+    get_account_identifier_transactions : shared query IndexIcp.GetAccountIdentifierTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;
+    get_account_transactions : shared query IndexIcp.GetAccountTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;
+    get_blocks : shared query IndexIcp.GetBlocksRequest -> async IndexIcp.GetBlocksResponse;
+    http_request : shared query IndexIcp.HttpRequest -> async IndexIcp.HttpResponse;
+    icrc1_balance_of : shared query IndexIcp.Account -> async Nat64;
+    ledger_id : shared query () -> async Principal;
+    status : shared query () -> async IndexIcp.Status;
   };
 
 };
