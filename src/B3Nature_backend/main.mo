@@ -229,6 +229,4 @@ actor class B3Nature() {
     return await index.get_blocks(request);
   };
 
-  stable let B3NatureMemo : Nat64 = 1235464551231356456;
-
 };

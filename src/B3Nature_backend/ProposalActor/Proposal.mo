@@ -19,7 +19,7 @@ actor ProposalActorB3Nature {
         #ReportedUser;
     };
 
-    public func titleToText(title : Title) : Text {
+    func titleToText(title : Title) : Text {
         switch (title) {
             case (#ChangeStatus) { "Changing Status" };
             case (#ReportedEvidence) { "Reported Evidence" };
@@ -49,12 +49,12 @@ actor ProposalActorB3Nature {
     };
 
     let onProposalExecute = func(proposal : Types.Proposal<ProposalContent>) : async* Result.Result<(), Text> {
-        Debug.print("Executing proposal: " # proposal.content.title);
+        Debug.print("Executing proposal: " # titleToText(proposal.content.title));
         #ok;
     };
 
     let onProposalReject = func(proposal : Types.Proposal<ProposalContent>) : async* () {
-        Debug.print("Rejecting proposal: " # proposal.content.title);
+        Debug.print("Rejecting proposal: " # titleToText(proposal.content.title));
     };
 
     let onProposalValidate = func(content : ProposalContent) : async* Result.Result<(), [Text]> {
