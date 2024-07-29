@@ -1,4 +1,5 @@
 import Array "mo:base/Array";
+import HashMap "mo:base/HashMap";
 import Time "mo:base/Time";
 import Map "mo:map/Map";
 import { nhash } "mo:map/Map";

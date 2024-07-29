@@ -3,6 +3,7 @@ import Result "mo:base/Result";
 import Map "mo:map/Map";
 import { phash } "mo:map/Map";
 
+import Proposal "ProposalActor/Proposal";
 import Report "Report";
 import Review "Review";
 
@@ -21,6 +22,7 @@ module {
         balance : Float;
         totalTokenEarned : Float;
         reports : [Report.Reports];
+        reportCount : Nat;
     };
 
     public type Role = {
@@ -68,6 +70,8 @@ module {
                     balance = 0;
                     totalTokenEarned = 0;
                     reports = [];
+                    reportCount = 0;
+
                 };
 
                 put(userMap, principal, user);
@@ -91,6 +95,7 @@ module {
                     balance = user.balance;
                     totalTokenEarned = user.totalTokenEarned;
                     reports = user.reports;
+                    reportCount = user.reportCount;
 
                 };
 
@@ -164,13 +169,14 @@ module {
         return false;
     };
 
-    public func submitReport(userMap : UserMap, userId : Principal, report : Report.Reports) : Bool {
+    public func submitReport(userMap : UserMap, caller : userId : Principal, report : Report.Reports, reportThroshold : Nat) : Bool {
         switch (get(userMap, userId)) {
             case (?user) {
                 let updatedReports = Array.append<Report.Reports>(user.reports, [report]);
                 let updateUser : User = {
                     user with reports = updatedReports;
                 };
+
                 put(userMap, userId, updateUser);
                 return true;
             };

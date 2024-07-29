@@ -58,9 +58,7 @@ actor ProposalActorB3Nature {
     };
 
     let onProposalValidate = func(content : ProposalContent) : async* Result.Result<(), [Text]> {
-        if (content.title == "" or content.description == "") {
-            return #err(["Title and description cannot be empty"]);
-        };
+
         #ok;
     };
 
@@ -77,8 +75,8 @@ actor ProposalActorB3Nature {
     };
 
     //  function to create a proposal
-    func create(proposerId : Principal, content : ProposalContent, members : [Types.Member]) : async Result.Result<Nat, Types.CreateProposalError> {
-        await* proposalEngine.createProposal(proposerId, content, members);
+    func create(proposerId : Principal, content : ProposalContent) : async Result.Result<Nat, Types.CreateProposalError> {
+        await* proposalEngine.createProposal(proposerId, content);
     };
 
     //  function to vote on a proposal
@@ -86,8 +84,9 @@ actor ProposalActorB3Nature {
         await* proposalEngine.vote(proposalId, voterId, vote);
     };
 
-    public shared func createProposal(content : ProposalContent) : async Result.Result<Nat, Types.CreateProposalError> {
+    // public shared func createProposal(caller : Principal, content : ProposalContent, members : [Member]) : async Result.Result<Nat, Types.CreateProposalError> {
 
-    };
+    //     proposalEngine.createProposal(caller, content);
+    // };
 
 };

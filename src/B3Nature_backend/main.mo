@@ -19,8 +19,11 @@ actor class B3Nature() {
 
   stable var userMap : User.UserMap = Map.new<Principal, User.User>();
   stable var tokenMap : Token.TokenMap = Map.new<Principal, Nat>();
+  stable var reportMap : Report.ReportMap = Map.new<Nat, Report.Report>();
+
   private stable var ReportThroshold : Nat = 10;
   private stable var TokenTotalSupply : Nat = 0;
+  private stable var RewardToken : Nat = 20;
 
   stable var nextReportId : Nat = 0;
 
@@ -144,20 +147,18 @@ actor class B3Nature() {
     return Iter.toArray<Evidence.Evidence>(Map.vals(evidencesMap));
   };
 
-  public query func getUnvalidatedEvidence() : async [Evidence.Evidence] {
-    var filteredEvidence : [Evidence.Evidence] = [];
+  public query func getUnvalidatedEvidences() : async [Evidence.Evidence] {
+    var filteredEvidences : [Evidence.Evidence] = [];
     for (element in Map.vals(evidencesMap)) {
       if (element.validated == false) {
-        filteredEvidence := Array.append<Evidence.Evidence>(filteredEvidence, [element]);
+        filteredEvidences := Array.append<Evidence.Evidence>(filteredEvidences, [element]);
       };
     };
 
-    return filteredEvidence;
+    return filteredEvidences;
   };
 
   // Report
-
-  stable var reportMap : Report.ReportMap = Map.new<Nat, Report.Report>();
 
   public shared ({ caller }) func submitReport(userId : Principal, evidenceId : Nat, category : Report.ReportCategory, details : Text) : async Result.Result<Text, Text> {
     if (User.isMember(userMap, caller) != true) {
@@ -214,19 +215,19 @@ actor class B3Nature() {
     return reports;
   };
 
-  let index = actor ("qhbym-qaaaa-aaaaa-aaafq-cai") : actor {
-    rget_account_identifier_balance : shared query Text -> async Nat64;
-    get_account_identifier_transactions : shared query IndexIcp.GetAccountIdentifierTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;
-    get_account_transactions : shared query IndexIcp.GetAccountTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;
-    get_blocks : shared query IndexIcp.GetBlocksRequest -> async IndexIcp.GetBlocksResponse;
-    http_request : shared query IndexIcp.HttpRequest -> async IndexIcp.HttpResponse;
-    icrc1_balance_of : shared query IndexIcp.Account -> async Nat64;
-    ledger_id : shared query () -> async Principal;
-    status : shared query () -> async IndexIcp.Status;
-  };
+  // let index = actor ("qhbym-qaaaa-aaaaa-aaafq-cai") : actor {
+  //   rget_account_identifier_balance : shared query Text -> async Nat64;
+  //   get_account_identifier_transactions : shared query IndexIcp.GetAccountIdentifierTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;
+  //   get_account_transactions : shared query IndexIcp.GetAccountTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;
+  //   get_blocks : shared query IndexIcp.GetBlocksRequest -> async IndexIcp.GetBlocksResponse;
+  //   http_request : shared query IndexIcp.HttpRequest -> async IndexIcp.HttpResponse;
+  //   icrc1_balance_of : shared query IndexIcp.Account -> async Nat64;
+  //   ledger_id : shared query () -> async Principal;
+  //   status : shared query () -> async IndexIcp.Status;
+  // };
 
-  public shared func getBlock(request : IndexIcp.GetBlocksRequest) : async IndexIcp.GetBlocksResponse {
-    return await index.get_blocks(request);
-  };
+  // public shared func getBlock(request : IndexIcp.GetBlocksRequest) : async IndexIcp.GetBlocksResponse {
+  //   return await index.get_blocks(request);
+  // };
 
 };
