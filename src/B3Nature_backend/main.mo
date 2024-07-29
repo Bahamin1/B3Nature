@@ -18,12 +18,14 @@ import User "User";
 actor class B3Nature() {
 
   stable var userMap : User.UserMap = Map.new<Principal, User.User>();
-  stable var tokenMap : Token.TokenMap = Map.new<Principal, Nat>();
+  // stable var tokenMap : Token.TokenMap = Map.new<Principal, Nat>();
   stable var reportMap : Report.ReportMap = Map.new<Nat, Report.Report>();
+  stable var proposalsMap : Proposal.ProposalMap = Map.new<Nat, Proposal.Proposal>();
+  stable var evidenceMap : Evidence.EvidenceMap = Map.new<Nat, Evidence.Evidence>();
 
-  private stable var ReportThroshold : Nat = 10;
-  private stable var TokenTotalSupply : Nat = 0;
-  private stable var RewardToken : Nat = 20;
+  private stable var reportThroshold : Nat = 10;
+  private stable var tokenTotalSupply : Nat = 0;
+  private stable var rewardToken : Nat = 20;
 
   stable var nextReportId : Nat = 0;
 
@@ -48,7 +50,7 @@ actor class B3Nature() {
 
   // Add Review to user
 
-  public shared ({ caller }) func addOrUpdateReviwe(userPrincipal : Principal, star : Review.Star, comment : ?Text) : async Result.Result<(Text), Text> {
+  public shared ({ caller }) func addOrUpdateReviweForUser(userPrincipal : Principal, star : Review.Star, comment : ?Text) : async Result.Result<(Text), Text> {
     if (User.isMember(userMap, caller)) {
       return #err("caller is not a Registered member");
     };
@@ -100,13 +102,65 @@ actor class B3Nature() {
     };
   };
 
+  public shared ({ caller }) func addOrUpdateReviweForEvidence(evidenceId : Nat, star : Review.Star, comment : ?Text) : async Result.Result<(Text), Text> {
+    if (User.isMember(userMap, caller)) {
+      return #err("caller is not a Registered member");
+    };
+
+    switch (Evidence.get(evidenceMap, evidenceId)) {
+      case (null) {
+        return #err("The Evidence with Id " #Nat.toText(evidenceId) # " does not exist!");
+      };
+      case (?evidence) {
+
+        if (Evidence.hasPoint(user, evidenceId)) {
+          let updateReview : Review.Review = {
+            reviewBy = caller;
+            comment = comment;
+            point = star;
+            cratedAt = Time.now();
+          };
+
+          switch (Evidence.replaceEvidencePoint(evidenceMap, evidence, caller, updateReview)) {
+            case (#err(errmsg)) {
+              return #err(errmsg);
+            };
+            case (#ok()) {
+              return #ok("review successfully created");
+            };
+          };
+
+        };
+        let evidenceReview = Buffer.fromArray<Review.Review>(evidence.review);
+        evidenceReview.add({
+          reviewBy = caller;
+          comment = comment;
+          point = star;
+          cratedAt = Time.now();
+        });
+
+        let starToNumb = Review.starToNumb(star);
+
+        let updateevidenceReview : Evidence.Evidence = {
+          evidence with review = Buffer.toArray<Review.Review>(evidenceReview);
+          reviewPoint = evidence.reviewPoint + starToNumb / evidence.totalReviewNumbers +1;
+          totalReviewNumbers = evidence.totalReviewNumbers + 1;
+        };
+
+        Evidence.put(evidenceMap, evidenceId, updateevidenceReview);
+
+        return #ok("Review Update to Evidence " #Nat.toText(evidenceId) # " successfully!");
+      };
+    };
+  };
+
   //get Review by principal
 
-  public shared query func getReview(p : Principal) : async [Review.Review] {
+  public shared query func getUserReviews(principal : Principal) : async [Review.Review] {
 
     var reviews : [Review.Review] = [];
 
-    let user = User.get(userMap, p);
+    let user = User.get(userMap, principal);
 
     switch (user) {
       case (?user) {
@@ -121,9 +175,27 @@ actor class B3Nature() {
 
   };
 
+  public shared query func getEvidenceReviews(id : Nat) : async [Review.Review] {
+
+    var reviews : [Review.Review] = [];
+
+    let evidence = Evidence.get(evidenceMap, id);
+
+    switch (evidence) {
+      case (?evidence) {
+
+        for (element in evidence.review.vals()) {
+          reviews := Array.append<Review.Review>(reviews, [element]);
+        };
+      };
+      case (null) { return [] };
+    };
+    return reviews;
+
+  };
+
   // user Evidence
 
-  stable var evidencesMap : Evidence.EvidenceMap = Map.new<Nat, Evidence.Evidence>();
   stable var nextEvidenceId : Nat = 0;
 
   public shared ({ caller }) func submitEvidence(image : [Blob], video : [Blob], description : Text, location : Evidence.Coordinates) : async Text {
@@ -190,6 +262,8 @@ actor class B3Nature() {
       return #err("evidence Not Found !");
     };
 
+    if ()
+
     return #ok("Done");
   };
 
@@ -215,6 +289,42 @@ actor class B3Nature() {
     return reports;
   };
 
+  let onProposalExecute = func(proposal : Types.Proposal<Content>) : async* Result.Result<(), Text> {
+    Proposal.put(proposalsMap, proposal.id);
+    Debug.print("Executing proposal: " # proposal.content.title);
+    #ok;
+  };
+
+  let data : Types.StableData<Content> = {
+    proposals = [];
+    proposalDuration = #days(7);
+    votingThreshold = #percent({ percent = 50; quorum = ?20 });
+  };
+
+  let onProposalExecute = func(proposal : Types.Proposal<Content>) : async* Result.Result<(), Text> {
+    Debug.print("Executing proposal: " # proposal.content.title);
+    #ok;
+  };
+
+  let onProposalReject = func(proposal : Types.Proposal<Content>) : async* () {
+    Debug.print("Rejecting proposal: " # proposal.content.title);
+  };
+
+  let onProposalValidate = func(content : Content) : async* Result.Result<(), [Text]> {
+    if (content.title == "" or content.description == "") {
+      return #err(["Title and description cannot be empty"]);
+    };
+    #ok;
+  };
+
+  let proposalEngine = ProposalEngine.ProposalEngine<system, Content>(data, onProposalExecute, onProposalReject, onProposalValidate);
+
+  public func create(proposalsMap : ProposalsMap, content : Content, proposerId : Nat) : async Result.Result<Nat, Types.CreateProposalError> {
+    let proposalEngine = ProposalEngine.ProposalEngine<system, Content>(data, onProposalExecute, onProposalReject, onProposalValidate);
+    let proposalId = await* proposalEngine.createProposal(proposerId, content);
+    proposalsMap.put(proposalId, data);
+    return #ok(proposalId);
+  };
   // let index = actor ("qhbym-qaaaa-aaaaa-aaafq-cai") : actor {
   //   rget_account_identifier_balance : shared query Text -> async Nat64;
   //   get_account_identifier_transactions : shared query IndexIcp.GetAccountIdentifierTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;

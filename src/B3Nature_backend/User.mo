@@ -184,4 +184,26 @@ module {
         };
     };
 
+    public func userCanPerform(userMap : UserMap, p : Principal, role : Types.Operation) : Bool {
+        let user = get(userMap, p);
+
+        switch (user) {
+            case (null) {
+                return false;
+            };
+            case (?user) {
+                switch (role) {
+                    case (#Newbee) return false;
+                    case (#ActiveParticipant) return false;
+                    case (#Staker) return true;
+                    case (#Council) return true;
+                    case (#Ambassador) return true;
+                    case (#Guardian) return true;
+
+                };
+            };
+
+        };
+    };
+
 };
