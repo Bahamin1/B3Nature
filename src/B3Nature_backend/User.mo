@@ -169,7 +169,7 @@ module {
         return false;
     };
 
-    public func submitReport(userMap : UserMap, caller : userId : Principal, report : Report.Reports, reportThroshold : Nat) : Bool {
+    public func submitReport(userMap : UserMap, userId : Principal, report : Report.Reports) : Bool {
         switch (get(userMap, userId)) {
             case (?user) {
                 let updatedReports = Array.append<Report.Reports>(user.reports, [report]);
@@ -184,7 +184,7 @@ module {
         };
     };
 
-    public func userCanPerform(userMap : UserMap, p : Principal, role : Types.Operation) : Bool {
+    public func userCanPerform(userMap : UserMap, p : Principal, role : Role) : Bool {
         let user = get(userMap, p);
 
         switch (user) {

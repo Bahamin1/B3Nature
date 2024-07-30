@@ -19,6 +19,7 @@ module {
         reports : [Report.Reports];
         review : [Review.Review];
         reviewPoint : Nat;
+        totalReviewNumbers : Nat;
 
     };
 

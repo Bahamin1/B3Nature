@@ -1,7 +1,9 @@
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
 import Debug "mo:base/Debug";
+import Error "mo:base/Error";
 import Iter "mo:base/Iter";
+import Nat "mo:base/Nat";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
@@ -10,28 +12,56 @@ import Types "mo:dao-proposal-engine/Types";
 import Map "mo:map/Map";
 
 import Evidence "Evidence";
-import IndexIcp "IndexICP";
+import Proposal "ProposalActor/Proposal";
 import Report "Report";
 import Review "Review";
-import Token "Token";
 import User "User";
+
 actor class B3Nature() {
 
   stable var userMap : User.UserMap = Map.new<Principal, User.User>();
-  // stable var tokenMap : Token.TokenMap = Map.new<Principal, Nat>();
   stable var reportMap : Report.ReportMap = Map.new<Nat, Report.Report>();
-  stable var proposalsMap : Proposal.ProposalMap = Map.new<Nat, Proposal.Proposal>();
   stable var evidenceMap : Evidence.EvidenceMap = Map.new<Nat, Evidence.Evidence>();
+  stable var proposalsMap : Proposal.ProposalsMap = Map.new<Nat, Types.Proposal<Proposal.Content>>();
 
   private stable var reportThroshold : Nat = 10;
-  private stable var tokenTotalSupply : Nat = 0;
-  private stable var rewardToken : Nat = 20;
+  private stable var treePlantingReward : Nat = 80;
+  private stable var ecoCleanupReward : Nat = 50;
+  private stable var animalProtectionReward : Nat = 40;
 
-  stable var nextReportId : Nat = 0;
+  private stable var manifesto : [Text] = [
+    "1. We are committed to protecting the environment and promoting sustainable practices.",
+    "2. We believe in the power of community and collaboration to drive positive change.",
+    "3. We strive for transparency and accountability in all our actions.",
+    "4. We value diversity and inclusivity in our organization and in the wider world.",
+    "5. We are dedicated to continuous learning and improvement.",
+    "6. We prioritize the well-being and safety of our members and the communities we serve.",
+    "7. We are committed to ethical and responsible use of resources.",
+    "8. We believe in the power of technology to create a better future for all.",
+    "9. We are dedicated to promoting and protecting human rights and social justice.",
+    "10. We are committed to upholding the principles of democracy and good governance.",
+  ];
+
+  private stable var nextReportId : Nat = 0;
+  private stable var nextProposalId : Nat = 0;
+
+  private stable var BlackList : [Principal] = [];
+
+  private func isBanned(principal : Principal) : Bool {
+    for (p in BlackList.vals()) {
+      if (p == principal) {
+        return true;
+      };
+    };
+    false;
+  };
 
   //register and Update members
 
   public shared ({ caller }) func registerAndUpdateMember(name : Text, email : Text, image : ?Blob) : async Result.Result<(Text), Text> {
+    if (isBanned(caller)) {
+      throw Error.reject("Access denied. You are banned.");
+    };
     switch (User.new(userMap, caller, name, email, image)) {
       case (#err(errmsg)) {
         return #err errmsg;
@@ -51,6 +81,9 @@ actor class B3Nature() {
   // Add Review to user
 
   public shared ({ caller }) func addOrUpdateReviweForUser(userPrincipal : Principal, star : Review.Star, comment : ?Text) : async Result.Result<(Text), Text> {
+    if (isBanned(caller)) {
+      throw Error.reject("Access denied. You are banned.");
+    };
     if (User.isMember(userMap, caller)) {
       return #err("caller is not a Registered member");
     };
@@ -103,6 +136,9 @@ actor class B3Nature() {
   };
 
   public shared ({ caller }) func addOrUpdateReviweForEvidence(evidenceId : Nat, star : Review.Star, comment : ?Text) : async Result.Result<(Text), Text> {
+    if (isBanned(caller)) {
+      throw Error.reject("Access denied. You are banned.");
+    };
     if (User.isMember(userMap, caller)) {
       return #err("caller is not a Registered member");
     };
@@ -113,7 +149,7 @@ actor class B3Nature() {
       };
       case (?evidence) {
 
-        if (Evidence.hasPoint(user, evidenceId)) {
+        if (Evidence.hasPoint(evidence, caller)) {
           let updateReview : Review.Review = {
             reviewBy = caller;
             comment = comment;
@@ -199,6 +235,10 @@ actor class B3Nature() {
   stable var nextEvidenceId : Nat = 0;
 
   public shared ({ caller }) func submitEvidence(image : [Blob], video : [Blob], description : Text, location : Evidence.Coordinates) : async Text {
+    if (isBanned(caller)) {
+      throw Error.reject("Access denied. You are banned.");
+    };
+
     let newEvidence : Evidence.Evidence = {
       id = nextEvidenceId;
       user = caller;
@@ -208,20 +248,24 @@ actor class B3Nature() {
       image = image;
       video = video;
       reports = [];
+      review = [];
+      reviewPoint = 0;
+      totalReviewNumbers = 0;
+
     };
-    Evidence.put(evidencesMap, newEvidence.id, newEvidence);
+    Evidence.put(evidenceMap, newEvidence.id, newEvidence);
     nextEvidenceId += 1;
     return "Successfull";
 
   };
 
   public query func getEvidence() : async [Evidence.Evidence] {
-    return Iter.toArray<Evidence.Evidence>(Map.vals(evidencesMap));
+    return Iter.toArray<Evidence.Evidence>(Map.vals(evidenceMap));
   };
 
   public query func getUnvalidatedEvidences() : async [Evidence.Evidence] {
     var filteredEvidences : [Evidence.Evidence] = [];
-    for (element in Map.vals(evidencesMap)) {
+    for (element in Map.vals(evidenceMap)) {
       if (element.validated == false) {
         filteredEvidences := Array.append<Evidence.Evidence>(filteredEvidences, [element]);
       };
@@ -233,6 +277,9 @@ actor class B3Nature() {
   // Report
 
   public shared ({ caller }) func submitReport(userId : Principal, evidenceId : Nat, category : Report.ReportCategory, details : Text) : async Result.Result<Text, Text> {
+    if (isBanned(caller)) {
+      throw Error.reject("Access denied. You are banned.");
+    };
     if (User.isMember(userMap, caller) != true) {
       return #err("only members can report");
     };
@@ -258,11 +305,9 @@ actor class B3Nature() {
       return #err("member not found !");
     };
 
-    if (Evidence.submitReport(evidencesMap, evidenceId, report) != true) {
+    if (Evidence.submitReport(evidenceMap, evidenceId, report) != true) {
       return #err("evidence Not Found !");
     };
-
-    if ()
 
     return #ok("Done");
   };
@@ -289,42 +334,57 @@ actor class B3Nature() {
     return reports;
   };
 
-  let onProposalExecute = func(proposal : Types.Proposal<Content>) : async* Result.Result<(), Text> {
-    Proposal.put(proposalsMap, proposal.id);
-    Debug.print("Executing proposal: " # proposal.content.title);
-    #ok;
-  };
-
-  let data : Types.StableData<Content> = {
+  let stableData : Types.StableData<Proposal.Content> = {
     proposals = [];
-    proposalDuration = #days(7);
+    proposalDuration = #days(3);
     votingThreshold = #percent({ percent = 50; quorum = ?20 });
   };
 
-  let onProposalExecute = func(proposal : Types.Proposal<Content>) : async* Result.Result<(), Text> {
-    Debug.print("Executing proposal: " # proposal.content.title);
-    #ok;
-  };
+  let onExecute = func(proposal : Types.Proposal<Proposal.Content>) : async* Result.Result<(), Text> {
+    switch (proposal.content) {
+      case (#AddManifesto(newManifesto)) {
+        manifesto := Array.append<Text>(manifesto, [newManifesto]);
+      };
+      case (#ChangeTreePlantingReward(newReward)) {
+        treePlantingReward := newReward;
+      };
+      case (#ChangeReportThreshold(newThreshold)) {
+        reportThroshold := newThreshold;
+      };
+      case (#ChangeEcoCleanupReward(newReward)) {
+        ecoCleanupReward := newReward;
+      };
+      case (#ChangeAnimalProtectionReward(newReward)) {
+        animalProtectionReward := newReward;
+      };
+      case (#MemberBan(banDetail)) {
+        BlackList := Array.append<Principal>(BlackList, [banDetail.member]);
+      };
+      case (#MemberUnban(unbanDetail)) {
+        BlackList := Array.filter<Principal>(BlackList, func(p) { p != unbanDetail.member });
 
-  let onProposalReject = func(proposal : Types.Proposal<Content>) : async* () {
-    Debug.print("Rejecting proposal: " # proposal.content.title);
-  };
-
-  let onProposalValidate = func(content : Content) : async* Result.Result<(), [Text]> {
-    if (content.title == "" or content.description == "") {
-      return #err(["Title and description cannot be empty"]);
+      };
     };
     #ok;
   };
 
-  let proposalEngine = ProposalEngine.ProposalEngine<system, Content>(data, onProposalExecute, onProposalReject, onProposalValidate);
-
-  public func create(proposalsMap : ProposalsMap, content : Content, proposerId : Nat) : async Result.Result<Nat, Types.CreateProposalError> {
-    let proposalEngine = ProposalEngine.ProposalEngine<system, Content>(data, onProposalExecute, onProposalReject, onProposalValidate);
-    let proposalId = await* proposalEngine.createProposal(proposerId, content);
-    proposalsMap.put(proposalId, data);
-    return #ok(proposalId);
+  let onReject = func(_ : Types.Proposal<Proposal.Content>) : async* () {
+    Debug.print("Proposal was rejected");
   };
+
+  let onValidate = func(_ : Proposal.Content) : async* Result.Result<(), [Text]> {
+    #ok;
+  };
+
+  let engine = ProposalEngine.ProposalEngine<system, Proposal.Content>(stableData, onExecute, onReject, onValidate);
+
+  // public shared ({ caller }) func createProposal(content : Proposal.Content) : async Result.Result<Text, Text> {
+  //   if (User.userCanPerform(userMap, caller) != true) {
+  //     return #err("user have not Access to create a proposal !");
+  //   };
+
+  // };
+
   // let index = actor ("qhbym-qaaaa-aaaaa-aaafq-cai") : actor {
   //   rget_account_identifier_balance : shared query Text -> async Nat64;
   //   get_account_identifier_transactions : shared query IndexIcp.GetAccountIdentifierTransactionsArgs -> async IndexIcp.GetAccountIdentifierTransactionsResult;

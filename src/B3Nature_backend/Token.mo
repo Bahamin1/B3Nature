@@ -15,13 +15,13 @@ module {
         return Map.set(tokenMap, phash, p, amount);
     };
 
-    public func mintTokens(tokenMap : TokenMap, to : Principal, amount : Nat) : (Text) {
-        let ?balance = get(tokenMap, to);
+    public func mintTokens(tokenMap : TokenMap, to : Principal, amount : Nat) : ?Nat {
+        let ?balance = get(tokenMap, to) else return null;
         if (balance > amount) {
             put(tokenMap, to, balance + amount);
-            return "Ok";
+            return ?balance;
         };
-        return "Err";
+        return null;
 
     };
 
