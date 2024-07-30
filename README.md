@@ -1,6 +1,6 @@
 # `B3Nature`
 
-B3Nature project uses ICP blockchain to create a tokenized platform for environmental protection. Sponsors can donate tokens, and verified participants engage in cleanup, animal treatment, and reforestation, earning tokens upon proof. AI integration ensures efficient verification and payments, and public voting determines rewards.
+B3Nature project uses ICP blockchain to create a tokenized platform for environmental protection. Sponsors and supporters can provide financial aid to users engaged in work through staking or donating., and verified participants engage in cleanup, animal treatment, and reforestation, earning tokens upon proof. AI integration ensures efficient verification and payments, and public voting determines rewards.
 
 ## Key Features
 
