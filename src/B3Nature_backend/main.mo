@@ -43,7 +43,6 @@ actor class B3Nature() {
   ];
 
   private stable var nextReportId : Nat = 0;
-  private stable var nextProposalId : Nat = 0;
 
   private stable var BlackList : [Principal] = [];
 
@@ -251,6 +250,7 @@ actor class B3Nature() {
       review = [];
       reviewPoint = 0;
       totalReviewNumbers = 0;
+      reportCount = 0;
 
     };
     Evidence.put(evidenceMap, newEvidence.id, newEvidence);
@@ -276,67 +276,62 @@ actor class B3Nature() {
 
   // Report
 
-  public shared ({ caller }) func submitReport(userId : Principal, evidenceId : Nat, category : Report.ReportCategory, details : Text) : async Result.Result<Text, Text> {
+  public shared ({ caller }) func submitReport(shot : Report.ReportShot, category : Report.ReportCategory, details : Text) : async Result.Result<Text, Text> {
     if (isBanned(caller)) {
       throw Error.reject("Access denied. You are banned.");
     };
     if (User.isMember(userMap, caller) != true) {
       return #err("only members can report");
     };
-
     let newReport : Report.Report = {
       catagory = category;
       reportId = nextReportId;
       reporterId = caller;
-      evidenceId = evidenceId;
-      userId = userId;
+      shot = shot;
       timestamp = Time.now();
       details = details;
     };
-    nextReportId += 1;
-    Report.put(reportMap, newReport.reportId, newReport);
-
     let report : Report.Reports = {
       id = newReport.reportId;
       category = category;
     };
+    switch (shot) {
+      case (#Member(p)) {
+        if (User.submitReport(userMap, p, report) != true) {
+          return #err("member not found !");
+        };
 
-    if (User.submitReport(userMap, userId, report) != true) {
-      return #err("member not found !");
+      };
+      case (#Evidence(id)) {
+
+        if (Evidence.submitReport(evidenceMap, id, report) != true) {
+          return #err("evidence Not Found !");
+        };
+      };
     };
 
-    if (Evidence.submitReport(evidenceMap, evidenceId, report) != true) {
-      return #err("evidence Not Found !");
-    };
+    nextReportId += 1;
+    Report.put(reportMap, newReport.reportId, newReport);
 
     return #ok("Done");
   };
 
-  public shared query func getUserReports(principal : Principal) : async [Report.Report] {
+  public shared query func getReports(shot : Report.ReportShot) : async [Report.Report] {
 
     var reports : [Report.Report] = [];
     for (report in Map.vals(reportMap)) {
-      if (report.userId == principal) {
+      if (report.shot == shot) {
         reports := Array.append<Report.Report>(reports, [report]);
       };
     };
     return reports;
   };
 
-  public shared query func getEvidenceReports(id : Nat) : async [Report.Report] {
-
-    var reports : [Report.Report] = [];
-    for (report in Map.vals(reportMap)) {
-      if (report.evidenceId == id) {
-        reports := Array.append<Report.Report>(reports, [report]);
-      };
-    };
-    return reports;
-  };
+  ///Proposal
 
   let stableData : Types.StableData<Proposal.Content> = {
     proposals = [];
-    proposalDuration = #days(3);
+    proposalDuration = #days(7);
     votingThreshold = #percent({ percent = 50; quorum = ?20 });
   };
 
@@ -362,7 +357,6 @@ actor class B3Nature() {
       };
       case (#MemberUnban(unbanDetail)) {
         BlackList := Array.filter<Principal>(BlackList, func(p) { p != unbanDetail.member });
-
       };
     };
     #ok;
@@ -378,12 +372,42 @@ actor class B3Nature() {
 
   let engine = ProposalEngine.ProposalEngine<system, Proposal.Content>(stableData, onExecute, onReject, onValidate);
 
-  // public shared ({ caller }) func createProposal(content : Proposal.Content) : async Result.Result<Text, Text> {
-  //   if (User.userCanPerform(userMap, caller) != true) {
-  //     return #err("user have not Access to create a proposal !");
-  //   };
+  public shared ({ caller }) func createProposal(content : Proposal.Content) : async Result.Result<Nat, Types.CreateProposalError> {
+    if (User.userCanPerform(userMap, caller) != true) {
+      return #err(#notAuthorized);
+    };
 
-  // };
+    switch (await* engine.createProposal(caller, content)) {
+      case (#ok(proposalId)) {
+        return #ok(proposalId);
+      };
+      case (#err(error)) {
+        return #err(error);
+      };
+    };
+  };
+
+  public func getProposals(count : Nat, offset : Nat) : async Types.PagedResult<Types.Proposal<Proposal.Content>> {
+
+    let pagedResult : Types.PagedResult<Types.Proposal<Proposal.Content>> = engine.getProposals(count, offset);
+    return pagedResult;
+  };
+
+  public func getProposal(id : Nat) : async ?Types.Proposal<Proposal.Content> {
+    let ?proposal : ?Types.Proposal<Proposal.Content> = engine.getProposal(id) else Debug.trap("Proposal not found");
+    return ?proposal;
+  };
+
+  public shared ({ caller }) func vote(proposalId : Nat, vote : Bool) : async Result.Result<(), Types.VoteError> {
+    switch (await* engine.vote(proposalId, caller, vote)) {
+      case (#ok) { return #ok() };
+      case (#err(error)) { return #err(error) };
+    };
+  };
+
+  public query func getReportThreshold() : async Nat {
+    return reportThroshold;
+  };
 
   // let index = actor ("qhbym-qaaaa-aaaaa-aaafq-cai") : actor {
   //   rget_account_identifier_balance : shared query Text -> async Nat64;

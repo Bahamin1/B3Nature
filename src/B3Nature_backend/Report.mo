@@ -1,6 +1,7 @@
 import Array "mo:base/Array";
 import HashMap "mo:base/HashMap";
 import Time "mo:base/Time";
+import PeekableIter "mo:itertools/PeekableIter";
 import Map "mo:map/Map";
 import { nhash } "mo:map/Map";
 
@@ -10,10 +11,14 @@ module {
         catagory : ReportCategory;
         reportId : Nat;
         reporterId : Principal;
-        evidenceId : Nat;
-        userId : Principal;
+        shot : ReportShot;
         timestamp : Time.Time;
         details : Text;
+    };
+
+    public type ReportShot = {
+        #Member : Principal;
+        #Evidence : Nat;
     };
 
     public type Reports = {

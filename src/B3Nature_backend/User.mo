@@ -62,7 +62,8 @@ module {
                     identity = principal;
                     email = email;
                     totalReviewNumbers = 0;
-                    role = #Newbee;
+                    //Test// must changed to Newbee
+                    role = #Guardian;
                     reviewPoint = 0;
                     votingPower = 0;
                     review = [];
@@ -76,7 +77,7 @@ module {
 
                 put(userMap, principal, user);
 
-                return #ok("member successfully updated ");
+                return #ok("Wellcome register Completed");
 
             };
             case (?user) {
@@ -100,7 +101,7 @@ module {
                 };
 
                 put(userMap, principal, updateUser);
-                return #ok("Wellcome register Completed");
+                return #ok("member successfully updated");
             };
         };
 
@@ -172,9 +173,11 @@ module {
     public func submitReport(userMap : UserMap, userId : Principal, report : Report.Reports) : Bool {
         switch (get(userMap, userId)) {
             case (?user) {
+                let newReportCount = user.reportCount +1;
                 let updatedReports = Array.append<Report.Reports>(user.reports, [report]);
                 let updateUser : User = {
                     user with reports = updatedReports;
+                    reportCount = newReportCount;
                 };
 
                 put(userMap, userId, updateUser);
@@ -184,7 +187,7 @@ module {
         };
     };
 
-    public func userCanPerform(userMap : UserMap, p : Principal, role : Role) : Bool {
+    public func userCanPerform(userMap : UserMap, p : Principal) : Bool {
         let user = get(userMap, p);
 
         switch (user) {
@@ -192,7 +195,7 @@ module {
                 return false;
             };
             case (?user) {
-                switch (role) {
+                switch (user.role) {
                     case (#Newbee) return false;
                     case (#ActiveParticipant) return false;
                     case (#Staker) return true;

@@ -14,6 +14,7 @@ module Proposal {
         #ChangeEcoCleanupReward : Nat;
         #ChangeAnimalProtectionReward : Nat;
         #MemberBan : BanDetail;
+        #MemberUnban : BanDetail;
     };
 
     public type BanDetail = {

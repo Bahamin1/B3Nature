@@ -20,6 +20,7 @@ module {
         review : [Review.Review];
         reviewPoint : Nat;
         totalReviewNumbers : Nat;
+        reportCount : Nat;
 
     };
 
@@ -43,9 +44,11 @@ module {
     public func submitReport(evidenceMap : EvidenceMap, evidenceId : Nat, report : Report.Reports) : Bool {
         switch (get(evidenceMap, evidenceId)) {
             case (?evidence) {
+                let newReportCount = evidence.reportCount +1;
                 let updatedReports = Array.append<Report.Reports>(evidence.reports, [report]);
                 let updateEvidence : Evidence = {
                     evidence with reports = updatedReports;
+                    reportCount = newReportCount;
                 };
                 put(evidenceMap, evidenceId, updateEvidence);
                 return true;
