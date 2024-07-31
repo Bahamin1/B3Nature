@@ -305,23 +305,23 @@ actor class B3Nature() = this {
           return #err("member not found !")
         };
 
-          switch (await* engine.createProposal(p, #MemberBan({ member = p; detail = "Reported too many times" }))) {
-            case (#ok(proposalId)) {
-              return #ok("proposal with id " # (Nat.toText(proposalId)) # " has been Created");
-            };
-
-            case (#err(err)) {
-              if (err == #notAuthorized) {
-                return #err("caller is not a Registered member");
-              };
-              return #err("proposal creation failed");
-            };
+        switch (await* engine.createProposal(p, #MemberBan({ member = p; detail = "Reported too many times" }))) {
+          case (#ok(proposalId)) {
+            return #ok("proposal with id " # (Nat.toText(proposalId)) # " has been Created")
           };
-        };
-      };
-      case (#Evidence(id)) {
-        let submitEvidenceReport = Evidence.submitReport(evidenceMap, id, report) else Debug.trap("Evidence not found");
-        if (submitEvidenceReport >= evidenceReportThroshold) {
+
+          case (#err(err)) {
+            if (err == #notAuthorized) {
+              return #err("caller is not a Registered member")
+            };
+            return #err("proposal creation failed")
+          }
+        }
+      }
+    };
+    case (#Evidence(id)) {
+      let submitEvidenceReport = Evidence.submitReport(evidenceMap, id, report) else Debug.trap("Evidence not found");
+      if (submitEvidenceReport >= evidenceReportThroshold) {
 
         if (Evidence.submitReport(evidenceMap, id, report) != true) {
           return #err("evidence Not Found !")
@@ -393,7 +393,7 @@ actor class B3Nature() = this {
 
   public shared ({ caller }) func createProposal(content : Proposal.Content) : async Result.Result<Nat, Types.CreateProposalError> {
     if (isBanned(caller)) {
-      throw Error.reject("Access denied. You are banned.");
+      throw Error.reject("Access denied. You are banned.")
     };
     if (User.userCanPerform(userMap, caller) != true) {
       return #err(#notAuthorized)
@@ -422,7 +422,7 @@ actor class B3Nature() = this {
 
   public shared ({ caller }) func vote(proposalId : Nat, vote : Bool) : async Result.Result<Types.StableData<Proposal.Content>, Types.VoteError> {
     if (isBanned(caller)) {
-      throw Error.reject("Access denied. You are banned.");
+      throw Error.reject("Access denied. You are banned.")
     };
     switch (await* engine.vote(proposalId, caller, vote)) {
       case (#ok) { return #ok() };
@@ -481,23 +481,23 @@ actor class B3Nature() = this {
       }
     };
 
+    let current_map = switch (balances.get(args.from.owner)) {
+      case (?m) { m };
+      case (null) {
+        TrieMap.TrieMap<Principal, Nat>(Principal.equal, Principal.hash)
+      }
+    };
+
     // Credit the sender's account
-    let sender_balance = switch (balances.get(args.from.owner)) {
-      case (?m) {
-        switch (m.get(args.token)) {
-          case (?b) { b };
-          case (null) { 0 }
-        }
-      };
+    let sender_balance = switch (current_map.get(args.token)) {
+      case (?b) { b };
       case (null) { 0 }
     };
 
-    let new_sender_token = TrieMap.TrieMap<Principal, Nat>(Principal.equal, Principal.hash);
-    new_sender_token.put(args.token, sender_balance + args.amount);
-    balances.put(args.from.owner, new_sender_token);
+    current_map.put(args.token, sender_balance + args.amount);
+    balances.put(args.from.owner, current_map);
 
     // Return the "block height" of the transfer
     #ok(block_height)
-  };
-
+  }
 }
