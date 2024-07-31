@@ -426,7 +426,7 @@ actor class B3Nature() = this {
     #TransferFromError : ICRC.TransferFromError
   };
 
-  private var balances = TrieMap.TrieMap<Principal, Nat>(Principal.equal, Principal.hash);
+  private var balances = TrieMap.TrieMap<Principal, TrieMap.TrieMap<Principal, Nat>>(Principal.equal, Principal.hash);
 
   // Accept donates of tokens
   public shared (msg) func donate(args : DonateArgs) : async Result.Result<Nat, DonateError> {
@@ -459,9 +459,19 @@ actor class B3Nature() = this {
     };
 
     // Credit the sender's account
-    let sender = args.from.owner;
-    let old_balance = Option.get(balances.get(sender), 0 : Nat);
-    balances.put(sender, old_balance + args.amount);
+    let sender_balance = switch (balances.get(args.from.owner)) {
+      case (?m) {
+        switch (m.get(args.token)) {
+          case (?b) { b };
+          case (null) { 0 }
+        }
+      };
+      case (null) { 0 }
+    };
+
+    let new_sender_token = TrieMap.TrieMap<Principal, Nat>(Principal.equal, Principal.hash);
+    new_sender_token.put(args.token, sender_balance + args.amount);
+    balances.put(args.from.owner, new_sender_token);
 
     // Return the "block height" of the transfer
     #ok(block_height)
