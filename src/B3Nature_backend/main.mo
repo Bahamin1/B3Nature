@@ -11,6 +11,7 @@ import ProposalEngine "mo:dao-proposal-engine/ProposalEngine";
 import Types "mo:dao-proposal-engine/Types";
 import Map "mo:map/Map";
 import Option "mo:base/Option";
+import TrieMap "mo:base/TrieMap";
 
 import Evidence "Evidence";
 import Proposal "ProposalActor/Proposal";
@@ -411,7 +412,7 @@ actor class B3Nature() = this {
     return reportThroshold
   };
 
-  public type DepositArgs = {
+  public type DonateArgs = {
     spender_subaccount : ?Blob;
     token : Principal;
     from : ICRC.Account;
@@ -421,14 +422,14 @@ actor class B3Nature() = this {
     created_at_time : ?Nat64
   };
 
-  public type DepositError = {
+  public type DonateError = {
     #TransferFromError : ICRC.TransferFromError
   };
 
-  stable var balances : Map.Map<Principal, Nat> = Map.new<Principal, Nat>();
+  private var balances = TrieMap.TrieMap<Principal, Nat>(Principal.equal, Principal.hash);
 
-  // Accept deposits of tokens
-  public shared (msg) func deposit(args : DepositArgs) : async Result.Result<Nat, DepositError> {
+  // Accept donates of tokens
+  public shared (msg) func donate(args : DonateArgs) : async Result.Result<Nat, DonateError> {
     let token : ICRC.Actor = actor (Principal.toText(args.token));
 
     let fee = switch (args.fee) {
