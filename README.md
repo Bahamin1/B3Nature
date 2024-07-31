@@ -2,6 +2,36 @@
 
 B3Nature project uses ICP blockchain to create a tokenized platform for environmental protection. Sponsors and supporters can provide financial aid to users engaged in work through staking or donating., and verified participants engage in cleanup, animal treatment, and reforestation, earning tokens upon proof. AI integration ensures efficient verification and payments, and public voting determines rewards.
 
+# Payment Process for B3Nature
+The B3Nature program finds its financial sponsors quickly due to its transparency and the trust it builds within the community. Many people are already engaged in environmental activities, often without proper organization or compensation. This program offers a structured and rewarding way for individuals around the world to contribute to environmental protection.
+
+## How It Works
+Sponsorship and Donations: Financial backers and donors contribute funds to the program, supporting various environmental projects.
+Staking and Voting: Users stake tokens to participate in the decision-making process, voting on proposals to ensure the projects align with community goals.
+Proposal Approval: When a proposal, such as an environmental cleanup, reaches a certain threshold of support (e.g., 100 votes), it is automatically approved and token automaticly paid to user ,
+Token Distribution: Upon successful completion and verification of the project, tokens are distributed to participants as rewards for their efforts.
+This system not only ensures fair compensation for those working towards environmental goals but also enhances the program's credibility and appeal, drawing significant attention and participation.
+
+## Future Capabilities
+In future updates, the program will incorporate AI-based review of submitted evidence to verify content and prevent fraud before creating proposals for voting. This feature will automatically perform preliminary verification, controlling network traffic and ensuring that only valid proposals reach the voting stage. This not only enhances security but also streamlines the proposal process, making it more efficient and reliable.
+# AI
+the program will incorporate AI-based review of submitted evidence to verify content and prevent fraud before creating proposals for voting. This feature is designed to perform preliminary verification automatically, which will control network traffic and ensure that only valid proposals reach the voting stage. This not only enhances security but also streamlines the proposal process, making it more efficient and reliable.
+# Location service
+useing live location tracking system within users' devices to verify their activities and the areas they clean. This feature will help us:
+Ensure the authenticity of users' cleanup activities and accurately record the cleaned areas.
+Provide fair token payments to users based on the extent of the area they clean.
+Prevent duplication of cleanup efforts and reduce the risk of fraudulent activities.
+Create a comprehensive map of cleaned areas, enabling better management and transparency of the cleanup efforts.
+These enhancements aim to further strengthen the integrity and effectiveness of the program, ensuring a fair and reliable system for all participants.
+
+# Team works
+we will be able to organize structured cleanups, allowing individuals to form small teams or large groups dedicated to environmental cleanup and support activities. These teams will be able to:
+Participate in organized cleanup efforts in various regions.
+Receive rewards based on the extent and impact of their activities.
+Collaborate and coordinate with other teams for more effective and widespread cleanup efforts.
+Contribute to a cleaner environment through well-structured and transparent initiatives.
+This feature will enhance the program by encouraging community engagement and providing incentives for collective action, ultimately leading to more significant and sustainable environmental impact.
+
 ## Key Features
 
 - **Tokenization and Staking**: Users can stake tokens to sponsor environmental projects and earn rewards.
