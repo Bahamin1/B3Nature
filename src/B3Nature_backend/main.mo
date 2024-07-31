@@ -10,12 +10,12 @@ import Time "mo:base/Time";
 import ProposalEngine "mo:dao-proposal-engine/ProposalEngine";
 import Types "mo:dao-proposal-engine/Types";
 import Map "mo:map/Map";
-import Option "mo:base/Option";
-import TrieMap "mo:base/TrieMap";
 
 import Evidence "Evidence";
 import Proposal "ProposalActor/Proposal";
 import Report "Report";
+import Review "Review";
+import User "User";
 import Review "Review";
 import User "User";
 import ICRC "./ICRC";
@@ -27,7 +27,8 @@ actor class B3Nature() = this {
   stable var evidenceMap : Evidence.EvidenceMap = Map.new<Nat, Evidence.Evidence>();
   stable var proposalsMap : Proposal.ProposalsMap = Map.new<Nat, Types.Proposal<Proposal.Content>>();
 
-  private stable var reportThroshold : Nat = 10;
+  private stable var userReportThroshold : Nat = 10;
+  private stable var evidenceReportThroshold : Nat = 5;
   private stable var treePlantingReward : Nat = 80;
   private stable var ecoCleanupReward : Nat = 50;
   private stable var animalProtectionReward : Nat = 40;
@@ -304,8 +305,23 @@ actor class B3Nature() = this {
           return #err("member not found !")
         };
 
+          switch (await* engine.createProposal(p, #MemberBan({ member = p; detail = "Reported too many times" }))) {
+            case (#ok(proposalId)) {
+              return #ok("proposal with id " # (Nat.toText(proposalId)) # " has been Created");
+            };
+
+            case (#err(err)) {
+              if (err == #notAuthorized) {
+                return #err("caller is not a Registered member");
+              };
+              return #err("proposal creation failed");
+            };
+          };
+        };
       };
       case (#Evidence(id)) {
+        let submitEvidenceReport = Evidence.submitReport(evidenceMap, id, report) else Debug.trap("Evidence not found");
+        if (submitEvidenceReport >= evidenceReportThroshold) {
 
         if (Evidence.submitReport(evidenceMap, id, report) != true) {
           return #err("evidence Not Found !")
@@ -376,6 +392,9 @@ actor class B3Nature() = this {
   let engine = ProposalEngine.ProposalEngine<system, Proposal.Content>(stableData, onExecute, onReject, onValidate);
 
   public shared ({ caller }) func createProposal(content : Proposal.Content) : async Result.Result<Nat, Types.CreateProposalError> {
+    if (isBanned(caller)) {
+      throw Error.reject("Access denied. You are banned.");
+    };
     if (User.userCanPerform(userMap, caller) != true) {
       return #err(#notAuthorized)
     };
@@ -401,13 +420,17 @@ actor class B3Nature() = this {
     return ?proposal
   };
 
-  public shared ({ caller }) func vote(proposalId : Nat, vote : Bool) : async Result.Result<(), Types.VoteError> {
+  public shared ({ caller }) func vote(proposalId : Nat, vote : Bool) : async Result.Result<Types.StableData<Proposal.Content>, Types.VoteError> {
+    if (isBanned(caller)) {
+      throw Error.reject("Access denied. You are banned.");
+    };
     switch (await* engine.vote(proposalId, caller, vote)) {
       case (#ok) { return #ok() };
       case (#err(error)) { return #err(error) }
     }
   };
 
+  //test //// must be delete
   public query func getReportThreshold() : async Nat {
     return reportThroshold
   };

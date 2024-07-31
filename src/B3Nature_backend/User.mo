@@ -170,7 +170,7 @@ module {
         return false;
     };
 
-    public func submitReport(userMap : UserMap, userId : Principal, report : Report.Reports) : Bool {
+    public func submitReport(userMap : UserMap, userId : Principal, report : Report.Reports) : Nat {
         switch (get(userMap, userId)) {
             case (?user) {
                 let newReportCount = user.reportCount +1;
@@ -181,11 +181,14 @@ module {
                 };
 
                 put(userMap, userId, updateUser);
-                return true;
+                return newReportCount;
             };
-            case (null) { false };
+            case (null) {
+                return 0;
+            };
         };
     };
+    //simple enum // must changed to complex with much more options
 
     public func userCanPerform(userMap : UserMap, p : Principal) : Bool {
         let user = get(userMap, p);
