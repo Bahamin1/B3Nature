@@ -41,7 +41,7 @@ module {
         return Map.set(evidenceMap, nhash, id, evidence);
     };
 
-    public func submitReport(evidenceMap : EvidenceMap, evidenceId : Nat, report : Report.Reports) : Bool {
+    public func submitReport(evidenceMap : EvidenceMap, evidenceId : Nat, report : Report.Reports) : Nat {
         switch (get(evidenceMap, evidenceId)) {
             case (?evidence) {
                 let newReportCount = evidence.reportCount +1;
@@ -51,9 +51,9 @@ module {
                     reportCount = newReportCount;
                 };
                 put(evidenceMap, evidenceId, updateEvidence);
-                return true;
+                return newReportCount;
             };
-            case (null) { false };
+            case (null) { 0 };
         };
     };
 
