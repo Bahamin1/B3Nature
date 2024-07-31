@@ -452,7 +452,15 @@ actor class B3Nature() = this {
   private var balances = TrieMap.TrieMap<Principal, TrieMap.TrieMap<Principal, Nat>>(Principal.equal, Principal.hash);
 
   // Accept donates of tokens
-  public shared (msg) func donate(args : DonateArgs) : async Result.Result<Nat, DonateError> {
+  public shared ({ caller }) func donate(args : DonateArgs) : async Result.Result<Nat, DonateError> {
+    if (isBanned(caller)) {
+      throw Error.reject("Access denied. You are banned.")
+    };
+
+    if (caller != args.from.owner) {
+      return #err(#TransferFromError(#GenericError(0, "caller is not the owner of the 'from' account")))
+    };
+
     let token : ICRC.Actor = actor (Principal.toText(args.token));
 
     let fee = switch (args.fee) {
