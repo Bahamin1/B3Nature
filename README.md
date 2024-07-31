@@ -16,13 +16,6 @@ This system not only ensures fair compensation for those working towards environ
 In future updates, the program will incorporate AI-based review of submitted evidence to verify content and prevent fraud before creating proposals for voting. This feature will automatically perform preliminary verification, controlling network traffic and ensuring that only valid proposals reach the voting stage. This not only enhances security but also streamlines the proposal process, making it more efficient and reliable.
 # AI
 the program will incorporate AI-based review of submitted evidence to verify content and prevent fraud before creating proposals for voting. This feature is designed to perform preliminary verification automatically, which will control network traffic and ensure that only valid proposals reach the voting stage. This not only enhances security but also streamlines the proposal process, making it more efficient and reliable.
-# Location service
-useing live location tracking system within users' devices to verify their activities and the areas they clean. This feature will help us:
-Ensure the authenticity of users' cleanup activities and accurately record the cleaned areas.
-Provide fair token payments to users based on the extent of the area they clean.
-Prevent duplication of cleanup efforts and reduce the risk of fraudulent activities.
-Create a comprehensive map of cleaned areas, enabling better management and transparency of the cleanup efforts.
-These enhancements aim to further strengthen the integrity and effectiveness of the program, ensuring a fair and reliable system for all participants.
 
 # Team works
 we will be able to organize structured cleanups, allowing individuals to form small teams or large groups dedicated to environmental cleanup and support activities. These teams will be able to:
