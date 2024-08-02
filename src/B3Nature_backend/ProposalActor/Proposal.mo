@@ -1,6 +1,3 @@
-import Result "mo:base/Result";
-import Time "mo:base/Time";
-import ProposalEngine "mo:dao-proposal-engine/ProposalEngine";
 import Types "mo:dao-proposal-engine/Types";
 import Map "mo:map/Map";
 import { nhash } "mo:map/Map";
