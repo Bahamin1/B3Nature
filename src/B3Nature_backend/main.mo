@@ -520,4 +520,9 @@ actor class B3Nature() = this {
     #ok(block_height);
 
   };
+
+  public shared query func getLogs(logs : Log.Catagory) : async Result.Result<[Log.Log], Text> {
+    return #ok(Log.getLogsByCategory(logMap, logs));
+  };
+
 };
