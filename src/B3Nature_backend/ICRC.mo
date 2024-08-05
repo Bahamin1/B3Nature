@@ -9,7 +9,7 @@ module ICRC {
 
     public type Account = {
         owner : Principal;
-        subaccount : ?Subaccount
+        subaccount : ?Subaccount;
     };
 
     public type TransferArg = {
@@ -18,7 +18,7 @@ module ICRC {
         amount : Tokens;
         fee : ?Tokens;
         memo : ?Blob;
-        created_at_time : ?Timestamp
+        created_at_time : ?Timestamp;
     };
 
     public type TransferError = {
@@ -29,12 +29,12 @@ module ICRC {
         #CreatedInFuture : { ledger_time : Nat64 };
         #TemporarilyUnavailable;
         #Duplicate : { duplicate_of : BlockIndex };
-        #GenericError : { error_code : Nat; message : Text }
+        #GenericError : { error_code : Nat; message : Text };
     };
 
     public type TransferResult = {
         #Ok : BlockIndex;
-        #Err : TransferError
+        #Err : TransferError;
     };
 
     // The value returned from the [icrc1_metadata] endpoint.
@@ -42,7 +42,7 @@ module ICRC {
         #Nat : Nat;
         #Int : Int;
         #Text : Text;
-        #Blob : Blob
+        #Blob : Blob;
     };
 
     public type ApproveArgs = {
@@ -53,7 +53,7 @@ module ICRC {
         expires_at : ?Timestamp;
         fee : ?Tokens;
         memo : ?Blob;
-        created_at_time : ?Timestamp
+        created_at_time : ?Timestamp;
     };
 
     public type ApproveError = {
@@ -65,22 +65,22 @@ module ICRC {
         #CreatedInFuture : { ledger_time : Nat64 };
         #Duplicate : { duplicate_of : BlockIndex };
         #TemporarilyUnavailable;
-        #GenericError : { error_code : Nat; message : Text }
+        #GenericError : { error_code : Nat; message : Text };
     };
 
     public type ApproveResult = {
         #Ok : BlockIndex;
-        #Err : ApproveError
+        #Err : ApproveError;
     };
 
     public type AllowanceArgs = {
         account : Account;
-        spender : Account
+        spender : Account;
     };
 
     public type Allowance = {
         allowance : Tokens;
-        expires_at : ?Timestamp
+        expires_at : ?Timestamp;
     };
 
     public type TransferFromArgs = {
@@ -90,12 +90,14 @@ module ICRC {
         amount : Tokens;
         fee : ?Tokens;
         memo : ?Blob;
-        created_at_time : ?Timestamp
+        created_at_time : ?Timestamp;
     };
+
+    public type Result_3 = { #Ok : Nat; #Err : TransferFromError };
 
     public type TransferFromResult = {
         #Ok : BlockIndex;
-        #Err : TransferFromError
+        #Err : TransferFromError;
     };
 
     public type TransferFromError = {
@@ -107,7 +109,7 @@ module ICRC {
         #CreatedInFuture : { ledger_time : Nat64 };
         #Duplicate : { duplicate_of : BlockIndex };
         #TemporarilyUnavailable;
-        #GenericError : { error_code : Nat; message : Text }
+        #GenericError : { error_code : Nat; message : Text };
     };
 
     public type Actor = actor {
@@ -122,10 +124,10 @@ module ICRC {
         icrc1_transfer : shared (TransferArg) -> async TransferResult;
         icrc1_supported_standards : shared query () -> async [{
             name : Text;
-            url : Text
+            url : Text;
         }];
         icrc2_approve : shared (ApproveArgs) -> async ApproveResult;
         icrc2_allowance : shared query (AllowanceArgs) -> async Allowance;
-        icrc2_transfer_from : shared (TransferFromArgs) -> async TransferFromResult
-    }
-}
+        icrc2_transfer_from : shared (TransferFromArgs) -> async TransferFromResult;
+    };
+};

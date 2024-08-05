@@ -10,6 +10,7 @@ module {
 
     public type Evidence = {
         id : Nat;
+        category : Category;
         user : Principal;
         description : Text;
         validated : Bool;
@@ -22,6 +23,12 @@ module {
         totalReviewNumbers : Nat;
         reportCount : Nat;
 
+    };
+
+    public type Category = {
+        #TreePlanting;
+        #EcoCleanup;
+        #AnimalProtection;
     };
 
     public type Coordinates = {

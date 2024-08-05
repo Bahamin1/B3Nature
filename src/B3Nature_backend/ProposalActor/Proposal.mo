@@ -12,6 +12,7 @@ module Proposal {
         #ChangeAnimalProtectionReward : Nat;
         #MemberBan : BanDetail;
         #MemberUnban : BanDetail;
+        #EvidenceConfermation : Nat;
 
     };
 

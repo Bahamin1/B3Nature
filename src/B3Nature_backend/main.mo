@@ -249,7 +249,7 @@ actor class B3Nature() = this {
 
   stable var nextEvidenceId : Nat = 0;
 
-  public shared ({ caller }) func submitEvidence(image : [Blob], video : [Blob], description : Text, location : Evidence.Coordinates) : async Text {
+  public shared ({ caller }) func submitEvidence(category : Evidence.Category, image : [Blob], video : [Blob], description : Text, location : Evidence.Coordinates) : async Text {
     if (isBannedUser(caller)) {
       throw Error.reject("Access denied. You are banned.");
     };
@@ -257,6 +257,7 @@ actor class B3Nature() = this {
     let newEvidence : Evidence.Evidence = {
       id = nextEvidenceId;
       user = caller;
+      category = category;
       description = description;
       validated = false;
       location = location;
@@ -384,6 +385,15 @@ actor class B3Nature() = this {
       };
       case (#MemberUnban(unbanDetail)) {
         UserBlackList := Array.filter<Principal>(UserBlackList, func(p) { p != unbanDetail.member });
+      };
+      case (#EvidenceConfermation(evidence)) {
+        let cat = switch (evidence.category) {
+          case (#TreePlanting) { treePlantingReward };
+          case (#EcoCleanup) { ecoCleanupReward };
+          case (#AnimalProtection) { animalProtectionReward };
+        };
+        await payReward(evidence.user, cat, Principal.fromActor(this), evidence.id);
+
       };
     };
     #ok;
@@ -519,6 +529,36 @@ actor class B3Nature() = this {
     Log.add(logMap, #Donate, "Member with id " #Principal.toText(caller) # " just donated !");
     #ok(block_height);
 
+  };
+
+  func payReward(to : Principal, amount : Nat, token : Principal, evidenceId : Nat) : async () {
+    let t : ICRC.Actor = actor (Principal.toText(token));
+    let fee = await t.icrc1_fee();
+    let actsubaccount = Principal.toBlob(Principal.fromActor(this));
+    let actLedger : ICRC.Account = {
+      owner = Principal.fromActor(this);
+      subaccount = ?actsubaccount;
+    };
+
+    let toSubbaccount = Principal.toBlob(to); // to subaccount
+    let transfer_result = await t.icrc2_transfer_from({
+
+      spender_subaccount = ?actsubaccount;
+      from = actLedger;
+      to = { owner = to; subaccount = ?toSubbaccount };
+      amount = amount;
+      fee = ?fee;
+      memo = null;
+      created_at_time = null;
+    });
+    switch (transfer_result) {
+      case (#Ok(ok)) {
+        Log.add(logMap, #Donate, "Member with id " #Principal.toText(to) # "  received reward for Evidence ID " #Nat.toText(evidenceId) # " !");
+        return;
+      };
+      case (#Err(err)) { Debug.print("Error while paying reward") };
+
+    };
   };
 
   public shared query func getLogs(logs : Log.Catagory) : async Result.Result<[Log.Log], Text> {
