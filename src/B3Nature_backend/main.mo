@@ -26,7 +26,7 @@ actor class B3Nature() = this {
   stable var userMap : User.UserMap = Map.new<Principal, User.User>();
   stable var reportMap : Report.ReportMap = Map.new<Nat, Report.Report>();
   stable var evidenceMap : Evidence.EvidenceMap = Map.new<Nat, Evidence.Evidence>();
-  stable var proposalsMap : Proposal.ProposalsMap = Map.new<Nat, Types.Proposal<Proposal.Content>>();
+  stable var proposalsMap : Proposal.ProposalsMap = Map.new<Nat, Proposal.MutableProposal<Proposal.Content>>();
   stable var logMap : Log.LogMap = Map.new<Nat, Log.Log>();
 
   private stable var userReportThroshold : Nat = 10;
@@ -323,7 +323,7 @@ actor class B3Nature() = this {
             };
 
             case (#err(err)) {
-              if (err == #notAuthorized) {
+              if (err == #NotAuthorized) {
                 return #err("caller is not a Registered member");
               };
               return #err("proposal creation failed");
@@ -357,13 +357,13 @@ actor class B3Nature() = this {
 
   ///Proposal
 
-  let stableData : Types.StableData<Proposal.Content> = {
-    proposals = [];
-    proposalDuration = #days(7);
-    votingThreshold = #percent({ percent = 50; quorum = ?20 });
+  let stableData : Proposal.InitData<Proposal.Content> = {
+    proposals = proposalsMap;
+    proposalDuration = #Days(7);
+    votingThreshold = #Percent({ percent = 50; quorum = ?20 });
   };
 
-  let onExecute = func(proposal : Types.Proposal<Proposal.Content>) : async* Result.Result<(), Text> {
+  let onExecute = func(proposal : Proposal.Proposal<Proposal.Content>) : async* Result.Result<(), Text> {
     switch (proposal.content) {
       case (#AddManifesto(newManifesto)) {
         manifesto := Array.append<Text>(manifesto, [newManifesto]);
@@ -399,7 +399,7 @@ actor class B3Nature() = this {
     #ok;
   };
 
-  let onReject = func(proposal : Types.Proposal<Proposal.Content>) : async* () {
+  let onReject = func(proposal : Proposal.Proposal<Proposal.Content>) : async* () {
     Debug.print("Proposal was rejected");
   };
 
@@ -407,14 +407,14 @@ actor class B3Nature() = this {
     #ok;
   };
 
-  let engine = ProposalEngine.ProposalEngine<system, Proposal.Content>(stableData, onExecute, onReject, onValidate);
+  let engine = Proposal.ProposalActor<system, Proposal.Content>(stableData, onExecute, onReject, onValidate);
 
-  public shared ({ caller }) func createProposal(content : Proposal.Content) : async Result.Result<Nat, Types.CreateProposalError> {
+  public shared ({ caller }) func createProposal(content : Proposal.Content) : async Result.Result<Nat, Proposal.ProposalCreateError> {
     // if (isBannedUser(caller)) {
     //   throw Error.reject("Access denied. You are banned.");
     // };
     if (User.userCanPerform(userMap, caller) != true) {
-      return #err(#notAuthorized);
+      return #err(#NotAuthorized);
     };
 
     switch (await* engine.createProposal(caller, content)) {
@@ -429,18 +429,18 @@ actor class B3Nature() = this {
 
   };
 
-  public func getProposals(count : Nat, offset : Nat) : async Types.PagedResult<Types.Proposal<Proposal.Content>> {
+  public func getProposals(count : Nat, offset : Nat) : async Proposal.PagedResult<Proposal.Proposal<Proposal.Content>> {
 
-    let pagedResult : Types.PagedResult<Types.Proposal<Proposal.Content>> = engine.getProposals(count, offset);
+    let pagedResult : Proposal.PagedResult<Proposal.Proposal<Proposal.Content>> = engine.getProposals(count, offset);
     return pagedResult;
   };
 
-  public func getProposal(id : Nat) : async ?Types.Proposal<Proposal.Content> {
-    let ?proposal : ?Types.Proposal<Proposal.Content> = engine.getProposal(id) else Debug.trap("Proposal not found");
+  public func getProposal(id : Nat) : async ?Proposal.Proposal<Proposal.Content> {
+    let ?proposal : ?Proposal.Proposal<Proposal.Content> = engine.getProposal(id) else Debug.trap("Proposal not found");
     return ?proposal;
   };
 
-  public shared ({ caller }) func vote(proposalId : Nat, vote : Bool) : async Result.Result<(), Types.VoteError> {
+  public shared ({ caller }) func vote(proposalId : Nat, vote : Bool) : async Result.Result<(), Proposal.VoteError> {
     if (isBannedUser(caller)) {
       throw Error.reject("Access denied. You are banned.");
     };
