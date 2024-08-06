@@ -22,7 +22,7 @@ we will be able to organize structured cleanups, allowing individuals to form sm
 Participate in organized cleanup efforts in various regions.
 Receive rewards based on the extent and impact of their activities.
 Collaborate and coordinate with other teams for more effective and widespread cleanup efforts.
-Contribute to a cleaner environment through well-structured and transparent initiatives.
+by Contribute to a cleaner environment through well-structured and transparent initiatives.
 This feature will enhance the program by encouraging community engagement and providing incentives for collective action, ultimately leading to more significant and sustainable environmental impact.
 
 ## Key Features
