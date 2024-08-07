@@ -26,7 +26,6 @@ actor class B3Nature() = this {
   stable var userMap : User.UserMap = Map.new<Principal, User.User>();
   stable var reportMap : Report.ReportMap = Map.new<Nat, Report.Report>();
   stable var evidenceMap : Evidence.EvidenceMap = Map.new<Nat, Evidence.Evidence>();
-  stable var proposalsMap : Proposal.ProposalsMap = Map.new<Nat, Proposal.MutableProposal<Proposal.Content>>();
   stable var logMap : Log.LogMap = Map.new<Nat, Log.Log>();
 
   private stable var userReportThroshold : Nat = 10;
@@ -50,6 +49,11 @@ actor class B3Nature() = this {
 
   private stable var nextReportId : Nat = 0;
 
+  type Reward = {
+    evidence : Evidence.Evidence;
+    amount : Nat;
+  };
+  private stable var RewardList : [Reward] = [];
   private stable var UserBlackList : [Principal] = [];
   private stable var EvidenceBlackList : [Principal] = [];
 
@@ -154,7 +158,7 @@ actor class B3Nature() = this {
     if (isBannedUser(caller)) {
       throw Error.reject("Access denied. You are banned.");
     };
-    if (User.isMember(userMap, caller)) {
+    if (User.isMember(userMap, caller) != true) {
       return #err("caller is not a Registered member");
     };
 
@@ -357,8 +361,8 @@ actor class B3Nature() = this {
 
   ///Proposal
 
-  let stableData : Proposal.InitData<Proposal.Content> = {
-    proposals = proposalsMap;
+  let data : Proposal.InitData<Proposal.Content> = {
+    proposals = [];
     proposalDuration = #Days(7);
     votingThreshold = #Percent({ percent = 50; quorum = ?20 });
   };
@@ -392,7 +396,13 @@ actor class B3Nature() = this {
           case (#EcoCleanup) { ecoCleanupReward };
           case (#AnimalProtection) { animalProtectionReward };
         };
-        await payReward(evidence.user, cat, Principal.fromActor(this), evidence.id);
+
+        let newReward : Reward = {
+          evidence = evidence;
+          amount = cat;
+        };
+
+        RewardList := Array.append<Reward>(RewardList, [newReward]);
 
       };
     };
@@ -407,7 +417,37 @@ actor class B3Nature() = this {
     #ok;
   };
 
-  let engine = Proposal.ProposalActor<system, Proposal.Content>(stableData, onExecute, onReject, onValidate);
+  func payReward(to : Principal, amount : Nat, token : Principal, evidenceId : Nat) : async () {
+    let t : ICRC.Actor = actor (Principal.toText(token));
+    let fee = await t.icrc1_fee();
+    let actsubaccount = Principal.toBlob(Principal.fromActor(this));
+    let actLedger : ICRC.Account = {
+      owner = Principal.fromActor(this);
+      subaccount = ?actsubaccount;
+    };
+
+    let toSubbaccount = Principal.toBlob(to); // to subaccount
+    let transfer_result = await t.icrc2_transfer_from({
+
+      spender_subaccount = ?actsubaccount;
+      from = actLedger;
+      to = { owner = to; subaccount = ?toSubbaccount };
+      amount = amount;
+      fee = ?fee;
+      memo = null;
+      created_at_time = null;
+    });
+    switch (transfer_result) {
+      case (#Ok(ok)) {
+        Log.add(logMap, #Donate, "Member with id " #Principal.toText(to) # "  received reward for Evidence ID " #Nat.toText(evidenceId) # " !");
+        return;
+      };
+      case (#Err(err)) { Debug.print("Error while paying reward") };
+
+    };
+  };
+
+  let engine = Proposal.ProposalActor<system, Proposal.Content>(data, onExecute, onReject, onValidate);
 
   public shared ({ caller }) func createProposal(content : Proposal.Content) : async Result.Result<Nat, Proposal.ProposalCreateError> {
     // if (isBannedUser(caller)) {
@@ -529,36 +569,6 @@ actor class B3Nature() = this {
     Log.add(logMap, #Donate, "Member with id " #Principal.toText(caller) # " just donated !");
     #ok(block_height);
 
-  };
-
-  func payReward(to : Principal, amount : Nat, token : Principal, evidenceId : Nat) : async () {
-    let t : ICRC.Actor = actor (Principal.toText(token));
-    let fee = await t.icrc1_fee();
-    let actsubaccount = Principal.toBlob(Principal.fromActor(this));
-    let actLedger : ICRC.Account = {
-      owner = Principal.fromActor(this);
-      subaccount = ?actsubaccount;
-    };
-
-    let toSubbaccount = Principal.toBlob(to); // to subaccount
-    let transfer_result = await t.icrc2_transfer_from({
-
-      spender_subaccount = ?actsubaccount;
-      from = actLedger;
-      to = { owner = to; subaccount = ?toSubbaccount };
-      amount = amount;
-      fee = ?fee;
-      memo = null;
-      created_at_time = null;
-    });
-    switch (transfer_result) {
-      case (#Ok(ok)) {
-        Log.add(logMap, #Donate, "Member with id " #Principal.toText(to) # "  received reward for Evidence ID " #Nat.toText(evidenceId) # " !");
-        return;
-      };
-      case (#Err(err)) { Debug.print("Error while paying reward") };
-
-    };
   };
 
   public shared query func getLogs(logs : Log.Catagory) : async Result.Result<[Log.Log], Text> {

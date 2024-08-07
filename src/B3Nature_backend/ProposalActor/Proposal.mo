@@ -6,12 +6,12 @@ import HashMap "mo:base/HashMap";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 import Order "mo:base/Order";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Timer "mo:base/Timer";
-import Types "mo:dao-proposal-engine/Types";
 import Itertools "mo:itertools/Iter";
 import Map "mo:map/Map";
 import { nhash } "mo:map/Map";
@@ -26,7 +26,7 @@ module Proposal {
         timeStart : Int;
         timeEnd : Int;
         endTimerId : ?Nat;
-        content : Content;
+        content : ProposalContent;
         votes : [(Principal, Vote)];
         statusLog : [Status];
     };
@@ -132,7 +132,7 @@ module Proposal {
     };
 
     public type InitData<ProposalContent> = {
-        proposals : ProposalsMap;
+        proposals : [Proposal<ProposalContent>];
         proposalDuration : Duration;
         votingThreshold : VotingThreshold;
     };
@@ -141,15 +141,28 @@ module Proposal {
         data : InitData<ProposalContent>,
         onProposalExecute : Proposal<ProposalContent> -> async* Result.Result<(), Text>,
         onProposalReject : Proposal<ProposalContent> -> async* (),
-        onProposalValidate : Content -> async* Result.Result<(), [Text]>,
+        onProposalValidate : ProposalContent -> async* Result.Result<(), [Text]>,
     ) {
 
-        let nextProposalId = Map.size(data.proposals) + 1;
+        let nextProposalId = data.proposals.size() + 1;
         var proposalDuration = data.proposalDuration;
         var votingThreshold = data.votingThreshold;
 
+        func hashNat(n : Nat) : Nat32 = Nat32.fromNat(n); // TODO
+
+        let proposalsIter = data.proposals.vals()
+        |> Iter.map<Proposal<ProposalContent>, (Nat, MutableProposal<ProposalContent>)>(
+            _,
+            func(proposal : Proposal<ProposalContent>) : (Nat, MutableProposal<ProposalContent>) {
+                let mutableProposal = toMutableProposal(proposal);
+                (proposal.id, mutableProposal);
+            },
+        );
+
+        var proposals = HashMap.fromIter<Nat, MutableProposal<ProposalContent>>(proposalsIter, 0, Nat.equal, hashNat);
+
         private func resetEndTimers<system>() {
-            for (proposal in Map.vals(data.proposals)) {
+            for (proposal in proposals.vals()) {
                 switch (proposal.endTimerId) {
                     case (null) ();
                     case (?id) Timer.cancelTimer(id);
@@ -165,7 +178,7 @@ module Proposal {
         };
 
         public func getProposal(id : Nat) : ?Proposal<ProposalContent> {
-            let ?proposal = get(data.proposals, id) else return null;
+            let ?proposal = proposals.get(id) else return null;
             ?{
                 proposal with
                 endTimerId = proposal.endTimerId;
@@ -180,10 +193,10 @@ module Proposal {
         };
 
         public func getProposals(count : Nat, offset : Nat) : PagedResult<Proposal<ProposalContent>> {
-            let vals = Map.vals(data.proposals)
+            let vals = proposals.vals()
             |> Iter.map(
                 _,
-                func(proposal : MutableProposal<Content>) : Proposal<Content> = fromMutableProposal(proposal),
+                func(proposal : MutableProposal<ProposalContent>) : Proposal<ProposalContent> = fromMutableProposal(proposal),
             )
             |> Itertools.sort(
                 _,
@@ -198,12 +211,12 @@ module Proposal {
                 data = vals;
                 offset = offset;
                 count = count;
-                total = Map.size(data.proposals);
+                total = proposals.size();
             };
         };
 
         public func vote(proposalId : Nat, voterId : Principal, vote : Bool) : async* Result.Result<(), VoteError> {
-            let ?proposal = get(data.proposals, proposalId) else return #err(#ProposalNotFound);
+            let ?proposal = proposals.get(proposalId) else return #err(#ProposalNotFound);
             let now = Time.now();
             let currentStatus = getProposalStatus(proposal.statusLog);
             if (proposal.timeStart > now or proposal.timeEnd < now or currentStatus != #open) {
@@ -217,7 +230,7 @@ module Proposal {
             #ok;
         };
 
-        private func voteInternal(proposal : MutableProposal<Content>, voterId : Principal, vote : Bool, votingPower : Nat) : async* () {
+        private func voteInternal(proposal : MutableProposal<ProposalContent>, voterId : Principal, vote : Bool, votingPower : Nat) : async* () {
             proposal.votes.put(
                 voterId,
                 {
@@ -243,7 +256,7 @@ module Proposal {
             };
         };
 
-        public func createProposal<system>(proposerId : Principal, content : Content) : async* Result.Result<Nat, ProposalCreateError> {
+        public func createProposal<system>(proposerId : Principal, content : ProposalContent) : async* Result.Result<Nat, ProposalCreateError> {
             let proposalId = nextProposalId;
 
             switch (await* onProposalValidate(content)) {
@@ -257,7 +270,7 @@ module Proposal {
             let endTimerId = createEndTimer<system>(proposalId, proposalDurationNanoseconds);
             let votes = HashMap.HashMap<Principal, Vote>(0, Principal.equal, Principal.hash);
 
-            let proposal : MutableProposal<Content> = {
+            let proposal : MutableProposal<ProposalContent> = {
                 id = proposalId;
                 proposerId = proposerId;
                 content = content;
@@ -269,7 +282,7 @@ module Proposal {
                 votingSummary = buildVotingSummary(votes);
             };
 
-            put(data.proposals, nextProposalId, proposal);
+            proposals.put(nextProposalId, proposal);
             #ok(proposalId);
 
         };
@@ -302,7 +315,7 @@ module Proposal {
             #ok;
             #alreadyEnded;
         } {
-            let ?mutableProposal = get(data.proposals, proposalId) else Debug.trap("Proposal not found for onProposalEnd: " # Nat.toText(proposalId));
+            let ?mutableProposal = proposals.get(proposalId) else Debug.trap("Proposal not found for onProposalEnd: " # Nat.toText(proposalId));
             switch (getProposalStatus(mutableProposal.statusLog)) {
                 case (#open) {
                     let passed = switch (calculateVoteStatus(mutableProposal)) {
@@ -316,7 +329,7 @@ module Proposal {
             };
         };
 
-        private func executeOrRejectProposal(mutableProposal : MutableProposal<Content>, execute : Bool) : async* () {
+        private func executeOrRejectProposal(mutableProposal : MutableProposal<ProposalContent>, execute : Bool) : async* () {
             // TODO executing
             switch (mutableProposal.endTimerId) {
                 case (null) ();
@@ -350,7 +363,7 @@ module Proposal {
             };
         };
 
-        private func calculateVoteStatus(proposal : MutableProposal<Content>) : {
+        private func calculateVoteStatus(proposal : MutableProposal<ProposalContent>) : {
             #undetermined;
             #passed;
             #rejected;
@@ -410,7 +423,7 @@ module Proposal {
         Int.abs(fixedThreshold);
     };
 
-    private func fromMutableProposal<ProposalContent>(proposal : MutableProposal<Content>) : Proposal<Content> = {
+    private func fromMutableProposal<ProposalContent>(proposal : MutableProposal<ProposalContent>) : Proposal<ProposalContent> = {
         proposal with
         endTimerId = proposal.endTimerId;
         votes = Iter.toArray(proposal.votes.entries());
@@ -452,6 +465,22 @@ module Proposal {
             };
         };
         votingSummary;
+    };
+
+    private func toMutableProposal<ProposalContent>(proposal : Proposal<ProposalContent>) : MutableProposal<ProposalContent> {
+        let votes = HashMap.fromIter<Principal, Vote>(
+            proposal.votes.vals(),
+            proposal.votes.size(),
+            Principal.equal,
+            Principal.hash,
+        );
+        {
+            proposal with
+            var endTimerId = proposal.endTimerId;
+            votes = votes;
+            statusLog = Buffer.fromArray<Status>(proposal.statusLog);
+            votingSummary = buildVotingSummary(votes);
+        };
     };
 
 };

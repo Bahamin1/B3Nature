@@ -160,14 +160,12 @@ module {
     };
 
     public func isMember(userMap : UserMap, p : Principal) : Bool {
-        let user = get(userMap, p);
+        let ?user = get(userMap, p) else return false;
         switch (?user) {
             case (user) {
                 return true;
             };
-
         };
-        return false;
     };
 
     public func submitReport(userMap : UserMap, userId : Principal, report : Report.Reports) : Nat {
