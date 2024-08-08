@@ -1,9 +1,11 @@
 import Array "mo:base/Array";
+import Buffer "mo:base/Buffer";
+import Float "mo:base/Float";
 import Result "mo:base/Result";
+import Time "mo:base/Time";
 import Map "mo:map/Map";
 import { phash } "mo:map/Map";
 
-import Proposal "ProposalActor/Proposal";
 import Report "Report";
 import Review "Review";
 
@@ -19,18 +21,34 @@ module {
         votingPower : Nat;
         review : [Review.Review];
         image : ?Blob;
-        balance : Float;
+        balance : Nat;
         totalTokenEarned : Float;
         reports : [Report.Reports];
         reportCount : Nat;
+        notifications : [Notify];
+    };
+
+    public type Notify = {
+        id : Nat;
+        message : NotifyMessages;
+        time : Time.Time;
+    };
+
+    public type NotifyMessages = {
+        #YourProposalRejected : Text;
+        #YourProposalCreated : Text;
+        #YourProposalAccepted : Text;
+        #YourEvidenceAccepted : Text;
+        #YourEvidenceBanned : Text;
+        #YourAreBanned : Text;
+        #YouReceivedToken : Text;
     };
 
     public type Role = {
         #Newbee;
-        #Staker;
         #ActiveParticipant;
-        #Council;
-        #Ambassador;
+        #Golden;
+        #Staker;
         #Guardian;
     };
 
@@ -72,6 +90,7 @@ module {
                     totalTokenEarned = 0;
                     reports = [];
                     reportCount = 0;
+                    notifications = [];
 
                 };
 
@@ -97,6 +116,7 @@ module {
                     totalTokenEarned = user.totalTokenEarned;
                     reports = user.reports;
                     reportCount = user.reportCount;
+                    notifications = user.notifications;
 
                 };
 
@@ -199,14 +219,25 @@ module {
                 switch (user.role) {
                     case (#Newbee) return false;
                     case (#ActiveParticipant) return false;
+                    case (#Silver) return false;
+                    case (#Golden) return true;
                     case (#Staker) return true;
-                    case (#Council) return true;
-                    case (#Ambassador) return true;
                     case (#Guardian) return true;
 
                 };
             };
 
+        };
+    };
+
+    public func userVotiongPower(userMap : UserMap, user : Principal) : Nat {
+        let ?member = get(userMap, user) else return 0;
+        switch (member.role) {
+            case (#Newbee) { 0 };
+            case (#ActiveParticipant) { 0 };
+            case (#Golden) { member.balance * 1 };
+            case (#Staker) { member.balance * 5 };
+            case (#Guardian) { member.balance * 5 };
         };
     };
 

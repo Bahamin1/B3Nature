@@ -101,8 +101,8 @@ module Proposal {
         #ChangeReportThreshold : Nat;
         #ChangeEcoCleanupReward : Nat;
         #ChangeAnimalProtectionReward : Nat;
-        #MemberBan : BanDetail;
-        #MemberUnban : BanDetail;
+        #MemberBan : BanDetailMember;
+        #MemberUnban : BanDetailMember;
         #EvidenceConfermation : Evidence.Evidence;
 
     };
@@ -114,7 +114,12 @@ module Proposal {
         total : Nat;
     };
 
-    public type BanDetail = {
+    public type BanDetailEvidence = {
+        evidenceId : Nat;
+        detail : Text;
+    };
+
+    public type BanDetailMember = {
         detail : Text;
         member : Principal;
     };

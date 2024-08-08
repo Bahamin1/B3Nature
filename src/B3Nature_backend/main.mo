@@ -8,10 +8,7 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 import TrieMap "mo:base/TrieMap";
-import ProposalEngine "mo:dao-proposal-engine/ProposalEngine";
-import Types "mo:dao-proposal-engine/Types";
 import Map "mo:map/Map";
-import { nhash } "mo:map/Map";
 
 import ICRC "./ICRC";
 import Evidence "Evidence";
@@ -28,8 +25,8 @@ actor class B3Nature() = this {
   stable var evidenceMap : Evidence.EvidenceMap = Map.new<Nat, Evidence.Evidence>();
   stable var logMap : Log.LogMap = Map.new<Nat, Log.Log>();
 
-  private stable var userReportThroshold : Nat = 10;
-  private stable var evidenceReportThroshold : Nat = 5;
+  private stable var userReportThroshold : Nat = 1;
+  private stable var evidenceReportThroshold : Nat = 1;
   private stable var treePlantingReward : Nat = 80;
   private stable var ecoCleanupReward : Nat = 50;
   private stable var animalProtectionReward : Nat = 40;
@@ -55,7 +52,7 @@ actor class B3Nature() = this {
   };
   private stable var RewardList : [Reward] = [];
   private stable var UserBlackList : [Principal] = [];
-  private stable var EvidenceBlackList : [Principal] = [];
+  private stable var EvidenceBlackList : [Nat] = [];
 
   private func isBannedUser(principal : Principal) : Bool {
     for (p in UserBlackList.vals()) {
@@ -258,6 +255,15 @@ actor class B3Nature() = this {
       throw Error.reject("Access denied. You are banned.");
     };
 
+    switch (User.get(userMap, caller)) {
+      case (null) { return "Caller is not found !" };
+
+      case (?user) {
+        let notifyId = user.notifications.size() +1;
+        let notify = Array.append<User.Notify>(user.notifications, [({ id = notifyId; message = #YourEvidenceSuccessfullyCreated("Your Evidence successFully created , Thank You"); time = Time.now() })]);
+      };
+    };
+
     let newEvidence : Evidence.Evidence = {
       id = nextEvidenceId;
       user = caller;
@@ -276,6 +282,7 @@ actor class B3Nature() = this {
     };
     Evidence.put(evidenceMap, newEvidence.id, newEvidence);
     nextEvidenceId += 1;
+
     return "Successfull";
 
   };
@@ -304,6 +311,9 @@ actor class B3Nature() = this {
     if (User.isMember(userMap, caller) != true) {
       return #err("only members can report");
     };
+
+    let proposerId = Principal.fromActor(this);
+
     let newReport : Report.Report = {
       catagory = category;
       reportId = nextReportId;
@@ -320,25 +330,36 @@ actor class B3Nature() = this {
       case (#Member(p)) {
         let submitUserReport = User.submitReport(userMap, p, report) else Debug.trap("User not found");
         if (submitUserReport >= userReportThroshold) {
-          switch (await* engine.createProposal(p, #MemberBan({ member = p; detail = "User with Id : " # Principal.toText(p) # "Reported too many times" }))) {
-            case (#ok(proposalId)) {
-              Log.add(logMap, #ReportedUser, "" #Principal.toText(p) # " Created Proposal for Report with id " #Nat.toText(proposalId) # "!");
-              return #ok("proposal with id " # (Nat.toText(proposalId)) # " has been Created");
-            };
+          if (isBannedUser(p)) {
+            return #ok("report submited");
+          } else {
 
-            case (#err(err)) {
-              if (err == #NotAuthorized) {
-                return #err("caller is not a Registered member");
+            switch (await* proposalAct.createProposal(proposerId, #MemberBan({ member = p; detail = "User with Id : " # Principal.toText(p) # "Reported too many times" }))) {
+              case (#ok(proposalId)) {
+                Log.add(logMap, #ReportedUser, "" #Principal.toText(p) # " Created Proposal for Report with id " #Nat.toText(proposalId) # "!");
+                return #ok("proposal with id " # (Nat.toText(proposalId)) # " has been Created");
               };
-              return #err("proposal creation failed");
+
+              case (#err(err)) {
+                if (err == #NotAuthorized) {
+                  return #err("caller is not a Registered member");
+                };
+                return #err("proposal creation failed");
+              };
             };
           };
         };
       };
       case (#Evidence(id)) {
-
         let submitEvidenceReport = Evidence.submitReport(evidenceMap, id, report) else Debug.trap("Evidence not found");
-
+        if (submitEvidenceReport >= evidenceReportThroshold) {
+          if (isBannedEvidence(id)) {
+            return #ok("report submited");
+          } else {
+            EvidenceBlackList := Array.append<Nat>(EvidenceBlackList, [id]);
+            return #ok("Evidence Blocked");
+          };
+        };
       };
     };
 
@@ -447,7 +468,7 @@ actor class B3Nature() = this {
     };
   };
 
-  let engine = Proposal.ProposalActor<system, Proposal.Content>(data, onExecute, onReject, onValidate);
+  let proposalAct = Proposal.ProposalActor<system, Proposal.Content>(data, onExecute, onReject, onValidate);
 
   public shared ({ caller }) func createProposal(content : Proposal.Content) : async Result.Result<Nat, Proposal.ProposalCreateError> {
     // if (isBannedUser(caller)) {
@@ -457,7 +478,7 @@ actor class B3Nature() = this {
       return #err(#NotAuthorized);
     };
 
-    switch (await* engine.createProposal(caller, content)) {
+    switch (await* proposalAct.createProposal(caller, content)) {
       case (#ok(proposalId)) {
         Log.add(logMap, #Proposal, "user with id" #Principal.toText(caller) # " Created Proposal with id   " #Nat.toText(proposalId) # "!");
         return #ok(proposalId);
@@ -471,12 +492,12 @@ actor class B3Nature() = this {
 
   public func getProposals(count : Nat, offset : Nat) : async Proposal.PagedResult<Proposal.Proposal<Proposal.Content>> {
 
-    let pagedResult : Proposal.PagedResult<Proposal.Proposal<Proposal.Content>> = engine.getProposals(count, offset);
+    let pagedResult : Proposal.PagedResult<Proposal.Proposal<Proposal.Content>> = proposalAct.getProposals(count, offset);
     return pagedResult;
   };
 
   public func getProposal(id : Nat) : async ?Proposal.Proposal<Proposal.Content> {
-    let ?proposal : ?Proposal.Proposal<Proposal.Content> = engine.getProposal(id) else Debug.trap("Proposal not found");
+    let ?proposal : ?Proposal.Proposal<Proposal.Content> = proposalAct.getProposal(id) else Debug.trap("Proposal not found");
     return ?proposal;
   };
 
@@ -484,7 +505,7 @@ actor class B3Nature() = this {
     if (isBannedUser(caller)) {
       throw Error.reject("Access denied. You are banned.");
     };
-    switch (await* engine.vote(proposalId, caller, vote)) {
+    switch (await* proposalAct.vote(proposalId, caller, vote)) {
       case (#ok) { return #ok() };
       case (#err(error)) { return #err(error) };
     };
