@@ -35,13 +35,13 @@ module {
     };
 
     public type NotifyMessages = {
-        #YourProposalRejected : Text;
-        #YourProposalCreated : Text;
-        #YourProposalAccepted : Text;
-        #YourEvidenceAccepted : Text;
-        #YourEvidenceBanned : Text;
-        #YourAreBanned : Text;
-        #YouReceivedToken : Text;
+        #CreateEvidence : Text;
+        #ProposalRejected : Text;
+        #ProposalCreated : Text;
+        #ProposalAccepted : Text;
+        #EvidenceAccepted : Text;
+        #Banned : Text;
+        #ReceivedToken : Text;
     };
 
     public type Role = {
