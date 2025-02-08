@@ -140,7 +140,7 @@ actor class B3Nature() = this {
 
         let updateUserReview : User.User = {
           user with review = Buffer.toArray<Review.Review>(userReview);
-          reviewPoint = user.reviewPoint + starToNumb / user.totalReviewNumbers +1;
+          reviewPoint = user.reviewPoint + starToNumb / user.totalReviewNumbers + 1;
           totalReviewNumbers = user.totalReviewNumbers + 1;
         };
 
@@ -195,7 +195,7 @@ actor class B3Nature() = this {
 
         let updateevidenceReview : Evidence.Evidence = {
           evidence with review = Buffer.toArray<Review.Review>(evidenceReview);
-          reviewPoint = evidence.reviewPoint + starToNumb / evidence.totalReviewNumbers +1;
+          reviewPoint = evidence.reviewPoint + starToNumb / evidence.totalReviewNumbers + 1;
           totalReviewNumbers = evidence.totalReviewNumbers + 1;
         };
 
@@ -260,7 +260,7 @@ actor class B3Nature() = this {
 
       case (?user) {
         let notifyId = user.notifications.size() +1;
-        let notify = Array.append<User.Notify>(user.notifications, [({ id = notifyId; message = #YourEvidenceSuccessfullyCreated("Your Evidence successFully created , Thank You"); time = Time.now() })]);
+        let notify = Array.append<User.Notify>(user.notifications, [({ id = notifyId; message = #ProposalCreated("Your Evidence successFully created , Thank You"); time = Time.now() })]);
       };
     };
 
