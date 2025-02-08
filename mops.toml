@@ -2,3 +2,6 @@
 base = "0.12.1"
 map = "9.0.1"
 itertools = "0.2.1"
+
+[toolchain]
+moc = "0.14.0"
