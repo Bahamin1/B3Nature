@@ -2,14 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+@layer base {
+  :root {
+    --background: 150 30% 96%;
+    --foreground: 150 50% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 50% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 150 50% 10%;
+    --primary: 150 60% 40%;
+    --primary-foreground: 150 10% 98%;
+    --secondary: 150 40% 30%;
+    --secondary-foreground: 150 10% 98%;
+    --muted: 150 20% 90%;
+    --muted-foreground: 150 30% 40%;
+    --accent: 150 40% 85%;
+    --accent-foreground: 150 50% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 150 30% 80%;
+    --input: 150 30% 80%;
+    --ring: 150 60% 40%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 150 30% 10%;
+    --foreground: 150 10% 98%;
+    --card: 150 30% 10%;
+    --card-foreground: 150 10% 98%;
+    --popover: 150 30% 10%;
+    --popover-foreground: 150 10% 98%;
+    --primary: 150 60% 40%;
+    --primary-foreground: 150 10% 98%;
+    --secondary: 150 40% 30%;
+    --secondary-foreground: 150 10% 98%;
+    --muted: 150 40% 20%;
+    --muted-foreground: 150 20% 70%;
+    --accent: 150 40% 20%;
+    --accent-foreground: 150 10% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 150 10% 98%;
+    --border: 150 40% 20%;
+    --input: 150 40% 20%;
+    --ring: 150 60% 40%;
+  }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .bg-card-gradient {
+    @apply bg-white/5 backdrop-blur-sm;
+  }
 }
 

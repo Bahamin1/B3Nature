@@ -1,13 +1,15 @@
 import "./globals.css"
 import { Inter } from "next/font/google"
-import type React from "react" // Import React
+import { Navigation } from "@/components/navigation"
+import { Footer } from "@/components/footer"
+import { Toaster } from "@/components/ui/toaster"
+import type React from "react"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "B3Nature - Bridging Technology and Nature",
-  description:
-    "B3Nature is an innovative project aimed at creating sustainable solutions that enhance our connection with the environment.",
+  title: "B3Nature - Bridging Nature and Technology",
+  description: "B3Nature is an innovative project harmonizing technology with nature for a sustainable future.",
 }
 
 export default function RootLayout({
@@ -16,8 +18,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className="scroll-smooth">
+      <body
+        className={`${inter.className} min-h-screen bg-gradient-to-b from-background via-background/95 to-background`}
+      >
+        <Navigation />
+        <main className="pt-16">{children}</main>
+        <Footer />
+        <Toaster />
+      </body>
     </html>
   )
 }
