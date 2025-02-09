@@ -5,10 +5,11 @@
   },
   "name": "B3Nature",
   "scripts": {
+    "dev": "npm run dev --workspace=B3Nature_frontend",
     "build": "npm run build --workspaces --if-present",
     "prebuild": "npm run prebuild --workspaces --if-present",
     "pretest": "npm run prebuild --workspaces --if-present",
-    "start": "npm start --workspaces --if-present",
+    "start": "npm run start --workspace=B3Nature_frontend",
     "test": "npm test --workspaces --if-present"
   },
   "type": "module",
